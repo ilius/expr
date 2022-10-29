@@ -1,7 +1,7 @@
 # Expr 
-[![test](https://github.com/antonmedv/expr/actions/workflows/test.yml/badge.svg)](https://github.com/antonmedv/expr/actions/workflows/test.yml) 
-[![Go Report Card](https://goreportcard.com/badge/github.com/antonmedv/expr)](https://goreportcard.com/report/github.com/antonmedv/expr) 
-[![GoDoc](https://godoc.org/github.com/antonmedv/expr?status.svg)](https://godoc.org/github.com/antonmedv/expr)
+[![test](https://github.com/ilius/expr/actions/workflows/test.yml/badge.svg)](https://github.com/ilius/expr/actions/workflows/test.yml) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/ilius/expr)](https://goreportcard.com/report/github.com/ilius/expr) 
+[![GoDoc](https://godoc.org/github.com/ilius/expr?status.svg)](https://godoc.org/github.com/ilius/expr)
 
 <img src="docs/images/logo-small.png" width="150" alt="expr logo" align="right">
 
@@ -27,7 +27,7 @@ product.Stock < 15
 ## Features
 
 * Seamless integration with Go (no need to redefine types)
-* Static typing ([example](https://godoc.org/github.com/antonmedv/expr#example-Env)).
+* Static typing ([example](https://godoc.org/github.com/ilius/expr#example-Env)).
   ```go
   out, err := expr.Compile(`name + age`)
   // err: invalid operation + (mismatched types string and int)
@@ -45,7 +45,7 @@ product.Stock < 15
 ## Install
 
 ```
-go get github.com/antonmedv/expr
+go get github.com/ilius/expr
 ```
 
 ## Documentation
@@ -72,7 +72,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/antonmedv/expr"
+	"github.com/ilius/expr"
 )
 
 func main() {
@@ -105,7 +105,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/antonmedv/expr"
+	"github.com/ilius/expr"
 )
 
 type Tweet struct {
@@ -151,7 +151,7 @@ func main() {
 * [Milvus](https://milvus.io) uses Expr in Milvus, an open-source vector database.
 * [Visually.io](https://visually.io) uses Expr as a business rule engine for our personalization targeting algorithm.
 
-[Add your company too](https://github.com/antonmedv/expr/edit/master/README.md)
+[Add your company too](https://github.com/ilius/expr/edit/master/README.md)
 
 ## License
 

@@ -1,6 +1,6 @@
 # Visitor and Patch
 
-The [ast](https://pkg.go.dev/github.com/antonmedv/expr/ast?tab=doc) package 
+The [ast](https://pkg.go.dev/github.com/ilius/expr/ast?tab=doc) package 
 provides `ast.Visitor` interface and `ast.Walk` function. You can use it for 
 customizing of the AST before compiling.
 
@@ -12,8 +12,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/parser"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/parser"
 )
 
 type visitor struct {
@@ -57,8 +57,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/ast"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/ast"
 )
 
 func main() {
@@ -113,8 +113,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/ast"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/ast"
 )
 
 func main() {

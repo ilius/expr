@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/antonmedv/expr/vm"
+	. "github.com/ilius/expr/vm"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 )

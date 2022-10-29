@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/compiler"
-	"github.com/antonmedv/expr/conf"
-	"github.com/antonmedv/expr/parser"
-	"github.com/antonmedv/expr/vm"
-	"github.com/antonmedv/expr/vm/runtime"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/compiler"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/parser"
+	"github.com/ilius/expr/vm"
+	"github.com/ilius/expr/vm/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

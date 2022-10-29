@@ -14,7 +14,7 @@ Now() - CreatedAt
 ```
 
 To overloading the operator use 
-[expr.Operator](https://pkg.go.dev/github.com/antonmedv/expr?tab=doc#Operator):
+[expr.Operator](https://pkg.go.dev/github.com/ilius/expr?tab=doc#Operator):
 
 ```go
 package main
@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/antonmedv/expr"
+	"github.com/ilius/expr"
 )
 
 func main() {

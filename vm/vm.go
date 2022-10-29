@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/antonmedv/expr/file"
-	"github.com/antonmedv/expr/vm/runtime"
+	"github.com/ilius/expr/file"
+	"github.com/ilius/expr/vm/runtime"
 )
 
 var (

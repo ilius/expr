@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/checker"
-	"github.com/antonmedv/expr/compiler"
-	"github.com/antonmedv/expr/conf"
-	"github.com/antonmedv/expr/parser"
-	"github.com/antonmedv/expr/vm"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/checker"
+	"github.com/ilius/expr/compiler"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/parser"
+	"github.com/ilius/expr/vm"
 	"github.com/stretchr/testify/require"
 )
 

@@ -3,9 +3,9 @@ package expr_test
 import (
 	"testing"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/test/real_world"
-	"github.com/antonmedv/expr/vm"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/test/real_world"
+	"github.com/ilius/expr/vm"
 )
 
 func Benchmark_expr(b *testing.B) {

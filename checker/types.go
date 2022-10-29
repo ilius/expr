@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/conf"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/conf"
 )
 
 var (

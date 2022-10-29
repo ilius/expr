@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/checker"
-	"github.com/antonmedv/expr/conf"
-	"github.com/antonmedv/expr/parser"
-	"github.com/antonmedv/expr/test/mock"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/checker"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/parser"
+	"github.com/ilius/expr/test/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

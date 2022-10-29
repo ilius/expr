@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/conf"
-	"github.com/antonmedv/expr/file"
-	"github.com/antonmedv/expr/parser"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/file"
+	"github.com/ilius/expr/parser"
 )
 
 func Check(tree *parser.Tree, config *conf.Config) (t reflect.Type, err error) {

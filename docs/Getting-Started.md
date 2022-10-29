@@ -14,7 +14,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/antonmedv/expr"
+	"github.com/ilius/expr"
 )
 
 func main() {
@@ -46,7 +46,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/antonmedv/expr"
+	"github.com/ilius/expr"
 )
 
 func main() {
@@ -88,7 +88,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/antonmedv/expr"
+	"github.com/ilius/expr"
 )
 
 type Env struct {
