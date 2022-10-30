@@ -13,22 +13,24 @@ import (
 	"github.com/ilius/expr/conf"
 	"github.com/ilius/expr/parser"
 	"github.com/ilius/expr/vm"
-	"github.com/stretchr/testify/require"
+	"github.com/ilius/is/v2"
 )
 
 func TestRun_NilProgram(t *testing.T) {
+	is := is.New(t)
 	_, err := vm.Run(nil, nil)
-	require.Error(t, err)
+	is.Err(err)
 }
 
 func TestRun_Debugger(t *testing.T) {
+	is := is.New(t)
 	input := `[1, 2]`
 
 	node, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(node, nil)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	debug := vm.Debug()
 	go func() {
@@ -43,38 +45,39 @@ func TestRun_Debugger(t *testing.T) {
 	}()
 
 	_, err = debug.Run(program, nil)
-	require.NoError(t, err)
-	require.Len(t, debug.Stack(), 0)
-	require.Nil(t, debug.Scope())
+	is.NotErr(err)
+	is.Equal(len(debug.Stack()), 0)
+	is.Nil(debug.Scope())
 }
 
 func TestRun_ReuseVM(t *testing.T) {
+	is := is.New(t)
 	node, err := parser.Parse(`map(1..2, {#})`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(node, nil)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	reuse := vm.VM{}
 	_, err = reuse.Run(program, nil)
-	require.NoError(t, err)
+	is.NotErr(err)
 	_, err = reuse.Run(program, nil)
-	require.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestRun_Cast(t *testing.T) {
+	is := is.New(t)
 	input := `1`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(tree, &conf.Config{Expect: reflect.Float64})
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, nil)
-	require.NoError(t, err)
-
-	require.Equal(t, float64(1), out)
+	is.NotErr(err)
+	is.Equal(float64(1), out)
 }
 
 func TestRun_Helpers(t *testing.T) {
@@ -97,6 +100,7 @@ func TestRun_Helpers(t *testing.T) {
 	for _, a := range values {
 		for _, b := range values {
 			for _, op := range ops {
+				is := is.New(t)
 
 				if op == "%" {
 					switch a.(type) {
@@ -116,22 +120,23 @@ func TestRun_Helpers(t *testing.T) {
 				}
 
 				tree, err := parser.Parse(input)
-				require.NoError(t, err)
+				is.NotErr(err)
 
 				_, err = checker.Check(tree, nil)
-				require.NoError(t, err)
+				is.NotErr(err)
 
 				program, err := compiler.Compile(tree, nil)
-				require.NoError(t, err)
+				is.NotErr(err)
 
 				_, err = vm.Run(program, env)
-				require.NoError(t, err)
+				is.NotErr(err)
 			}
 		}
 	}
 }
 
 func TestRun_Helpers_Time(t *testing.T) {
+	is := is.New(t)
 	testTime := time.Date(2000, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
 	testDuration := time.Duration(1)
 
@@ -195,22 +200,22 @@ func TestRun_Helpers_Time(t *testing.T) {
 			}
 
 			tree, err := parser.Parse(input)
-			require.NoError(t, err)
+			is.NotErr(err)
 
 			_, err = checker.Check(tree, nil)
-			require.NoError(t, err)
+			is.NotErr(err)
 
 			program, err := compiler.Compile(tree, nil)
-			require.NoError(t, err)
+			is.NotErr(err)
 
 			got, err := vm.Run(program, env)
 			if tt.wantErr {
-				require.Error(t, err)
+				is.Err(err)
 			} else {
-				require.NoError(t, err)
+				is.NotErr(err)
 
 				if tt.want != nil {
-					require.Equal(t, tt.want, got)
+					is.Equal(tt.want, got)
 				}
 			}
 		})
@@ -218,16 +223,17 @@ func TestRun_Helpers_Time(t *testing.T) {
 }
 
 func TestRun_MemoryBudget(t *testing.T) {
+	is := is.New(t)
 	input := `map(1..100, {map(1..100, {map(1..100, {0})})})`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(tree, nil)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	_, err = vm.Run(program, nil)
-	require.Error(t, err)
+	is.Err(err)
 }
 
 type ErrorEnv struct {
@@ -254,29 +260,31 @@ func (InnerEnv) WillError(param string) (bool, error) {
 }
 
 func TestRun_MethodWithError(t *testing.T) {
+	is := is.New(t)
 	input := `WillError("yes")`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := ErrorEnv{}
 	funcConf := conf.New(env)
 	_, err = checker.Check(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, env)
-	require.EqualError(t, err, "error (1:1)\n | WillError(\"yes\")\n | ^")
-	require.Equal(t, nil, out)
+	is.ErrMsg(err, "error (1:1)\n | WillError(\"yes\")\n | ^")
+	is.Equal(nil, out)
 }
 
 func TestRun_FastMethods(t *testing.T) {
+	is := is.New(t)
 	input := `hello() + world()`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := map[string]interface{}{
 		"hello": func(...interface{}) interface{} { return "hello " },
@@ -284,75 +292,77 @@ func TestRun_FastMethods(t *testing.T) {
 	}
 	funcConf := conf.New(env)
 	_, err = checker.Check(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, env)
-	require.NoError(t, err)
-
-	require.Equal(t, "hello world", out)
+	is.NotErr(err)
+	is.Equal("hello world", out)
 }
 
 func TestRun_FastMethodWithError(t *testing.T) {
+	is := is.New(t)
 	input := `FastError()`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := ErrorEnv{}
 	funcConf := conf.New(env)
 	_, err = checker.Check(tree, funcConf)
-	require.NoError(t, err)
-	require.True(t, tree.Node.(*ast.CallNode).Fast, "method must be fast")
+	is.NotErr(err)
+	is.Msg("method must be fast").True(tree.Node.(*ast.CallNode).Fast)
 
 	program, err := compiler.Compile(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, env)
-	require.NoError(t, err)
-
-	require.Equal(t, true, out)
+	is.NotErr(err)
+	is.Equal(true, out)
 }
 
 func TestRun_InnerMethodWithError(t *testing.T) {
+	is := is.New(t)
 	input := `InnerEnv.WillError("yes")`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := ErrorEnv{}
 	funcConf := conf.New(env)
 	program, err := compiler.Compile(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, env)
-	require.EqualError(t, err, "inner error (1:10)\n | InnerEnv.WillError(\"yes\")\n | .........^")
-	require.Equal(t, nil, out)
+	is.ErrMsg(err, "inner error (1:10)\n | InnerEnv.WillError(\"yes\")\n | .........^")
+	is.Equal(nil, out)
 }
 
 func TestRun_InnerMethodWithError_NilSafe(t *testing.T) {
+	is := is.New(t)
 	input := `InnerEnv?.WillError("yes")`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := ErrorEnv{}
 	funcConf := conf.New(env)
 	program, err := compiler.Compile(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, env)
-	require.EqualError(t, err, "inner error (1:11)\n | InnerEnv?.WillError(\"yes\")\n | ..........^")
-	require.Equal(t, nil, out)
+	is.ErrMsg(err, "inner error (1:11)\n | InnerEnv?.WillError(\"yes\")\n | ..........^")
+	is.Equal(nil, out)
 }
 
 func TestRun_TaggedFieldName(t *testing.T) {
+	is := is.New(t)
 	input := `value`
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := struct {
 		V string `expr:"value"`
@@ -362,13 +372,12 @@ func TestRun_TaggedFieldName(t *testing.T) {
 
 	funcConf := conf.New(env)
 	_, err = checker.Check(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(tree, funcConf)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := vm.Run(program, env)
-	require.NoError(t, err)
-
-	require.Equal(t, "hello world", out)
+	is.NotErr(err)
+	is.Equal("hello world", out)
 }

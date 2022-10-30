@@ -11,8 +11,7 @@ import (
 	"github.com/ilius/expr/parser"
 	"github.com/ilius/expr/vm"
 	"github.com/ilius/expr/vm/runtime"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/ilius/is/v2"
 )
 
 type B struct {
@@ -236,14 +235,15 @@ func TestCompile(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		is := is.New(t)
 		program, err := expr.Compile(test.input, expr.Env(Env{}))
-		require.NoError(t, err, test.input)
-
-		assert.Equal(t, test.program.Disassemble(), program.Disassemble(), test.input)
+		is.Msg(test.input).NotErr(err)
+		is.Msg(test.input).Equal(test.program.Disassemble(), program.Disassemble())
 	}
 }
 
 func TestCompile_cast(t *testing.T) {
+	is := is.New(t)
 	input := `1`
 	expected := &vm.Program{
 		Constants: []interface{}{
@@ -257,10 +257,9 @@ func TestCompile_cast(t *testing.T) {
 	}
 
 	tree, err := parser.Parse(input)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	program, err := compiler.Compile(tree, &conf.Config{Expect: reflect.Float64})
-	require.NoError(t, err)
-
-	assert.Equal(t, expected.Disassemble(), program.Disassemble())
+	is.NotErr(err)
+	is.Equal(expected.Disassemble(), program.Disassemble())
 }

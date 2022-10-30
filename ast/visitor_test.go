@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/ilius/expr/ast"
-	"github.com/stretchr/testify/assert"
+	"github.com/ilius/is/v2"
 )
 
 type visitor struct {
@@ -19,6 +19,7 @@ func (v *visitor) Exit(node *ast.Node) {
 }
 
 func TestWalk(t *testing.T) {
+	is := is.New(t)
 	var node ast.Node
 	node = &ast.BinaryNode{
 		Operator: "+",
@@ -28,7 +29,7 @@ func TestWalk(t *testing.T) {
 
 	visitor := &visitor{}
 	ast.Walk(&node, visitor)
-	assert.Equal(t, []string{"foo", "bar"}, visitor.identifiers)
+	is.Equal([]string{"foo", "bar"}, visitor.identifiers)
 }
 
 type patcher struct{}
@@ -41,6 +42,7 @@ func (p *patcher) Enter(node *ast.Node) {
 func (p *patcher) Exit(node *ast.Node) {}
 
 func TestWalk_patch(t *testing.T) {
+	is := is.New(t)
 	var node ast.Node
 	node = &ast.BinaryNode{
 		Operator: "+",
@@ -50,6 +52,6 @@ func TestWalk_patch(t *testing.T) {
 
 	patcher := &patcher{}
 	ast.Walk(&node, patcher)
-	assert.IsType(t, &ast.NilNode{}, node.(*ast.BinaryNode).Left)
-	assert.IsType(t, &ast.NilNode{}, node.(*ast.BinaryNode).Right)
+	is.EqualType(&ast.NilNode{}, node.(*ast.BinaryNode).Left)
+	is.EqualType(&ast.NilNode{}, node.(*ast.BinaryNode).Right)
 }

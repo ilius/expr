@@ -11,8 +11,7 @@ import (
 	"github.com/ilius/expr"
 	"github.com/ilius/expr/ast"
 	"github.com/ilius/expr/file"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/ilius/is/v2"
 )
 
 func ExampleEval() {
@@ -441,6 +440,7 @@ func ExamplePatch() {
 }
 
 func TestOperator_struct(t *testing.T) {
+	is := is.New(t)
 	env := &mockEnv{
 		BirthDay: time.Date(2017, time.October, 23, 18, 30, 0, 0, time.UTC),
 	}
@@ -448,14 +448,15 @@ func TestOperator_struct(t *testing.T) {
 	code := `BirthDay == "2017-10-23"`
 
 	program, err := expr.Compile(code, expr.Env(&mockEnv{}), expr.Operator("==", "DateEqual"))
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	output, err := expr.Run(program, env)
-	require.NoError(t, err)
-	require.Equal(t, true, output)
+	is.NotErr(err)
+	is.Equal(true, output)
 }
 
 func TestOperator_interface(t *testing.T) {
+	is := is.New(t)
 	env := &mockEnv{
 		Ticket: &ticket{Price: 100},
 	}
@@ -468,14 +469,15 @@ func TestOperator_interface(t *testing.T) {
 		expr.Operator("==", "StringerStringEqual", "StringStringerEqual", "StringerStringerEqual"),
 		expr.Operator("!=", "NotStringerStringEqual", "NotStringStringerEqual", "NotStringerStringerEqual"),
 	)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	output, err := expr.Run(program, env)
-	require.NoError(t, err)
-	require.Equal(t, true, output)
+	is.NotErr(err)
+	is.Equal(true, output)
 }
 
 func TestExpr_readme_example(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"greet":   "Hello, %v!",
 		"names":   []string{"world", "you"},
@@ -485,12 +487,11 @@ func TestExpr_readme_example(t *testing.T) {
 	code := `sprintf(greet, names[0])`
 
 	program, err := expr.Compile(code, expr.Env(env))
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	output, err := expr.Run(program, env)
-	require.NoError(t, err)
-
-	require.Equal(t, "Hello, world!", output)
+	is.NotErr(err)
+	is.Equal("Hello, world!", output)
 }
 
 func TestExpr(t *testing.T) {
@@ -963,57 +964,61 @@ func TestExpr(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		is := is.New(t)
 		program, err := expr.Compile(tt.code, expr.Env(&mockEnv{}))
-		require.NoError(t, err, "compile error")
+		is.Msg("compile error").NotErr(err)
 
 		got, err := expr.Run(program, env)
-		require.NoError(t, err, "execution error")
-
-		assert.Equal(t, tt.want, got, tt.code)
+		is.Msg("execution error").NotErr(err)
+		is.Msg(tt.code).Equal(tt.want, got)
 	}
 
 	for _, tt := range tests {
 		if tt.code == `-Int64 == 0` {
+			is := is.New(t)
 			program, err := expr.Compile(tt.code, expr.Optimize(false))
-			require.NoError(t, err, "compile error")
+			is.Msg("compile error").NotErr(err)
 
 			got, err := expr.Run(program, env)
-			require.NoError(t, err, "run error")
-			assert.Equal(t, tt.want, got, "unoptimized: "+tt.code)
+			is.Msg("run error").NotErr(err)
+			is.Msg("unoptimized: "+tt.code).Equal(tt.want, got)
 		}
 	}
 
 	for _, tt := range tests {
+		is := is.New(t)
 		got, err := expr.Eval(tt.code, env)
-		require.NoError(t, err, "eval error: "+tt.code)
-
-		assert.Equal(t, tt.want, got, "eval: "+tt.code)
+		is.Msg("eval error: " + tt.code).NotErr(err)
+		is.Msg("eval: "+tt.code).Equal(tt.want, got)
 	}
 }
 
 func TestExpr_optional_chaining(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{}
 	program, err := expr.Compile("foo?.bar.baz", expr.Env(env), expr.AllowUndefinedVariables())
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	got, err := expr.Run(program, env)
-	require.NoError(t, err)
-	assert.Equal(t, nil, got)
+	is.NotErr(err)
+	is.Equal(nil, got)
 }
 
 func TestExpr_optional_chaining_property(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"foo": map[string]interface{}{},
 	}
 	program, err := expr.Compile("foo.bar?.baz", expr.Env(env))
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	got, err := expr.Run(program, env)
-	require.NoError(t, err)
-	assert.Equal(t, nil, got)
+	is.NotErr(err)
+	is.Equal(nil, got)
 }
 
 func TestExpr_optional_chaining_nested_chains(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"foo": map[string]interface{}{
 			"id": 1,
@@ -1025,28 +1030,31 @@ func TestExpr_optional_chaining_nested_chains(t *testing.T) {
 		},
 	}
 	program, err := expr.Compile("foo?.bar[foo?.id]?.baz", expr.Env(env))
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	got, err := expr.Run(program, env)
-	require.NoError(t, err)
-	assert.Equal(t, "baz", got)
+	is.NotErr(err)
+	is.Equal("baz", got)
 }
 
 func TestExpr_eval_with_env(t *testing.T) {
+	is := is.New(t)
 	_, err := expr.Eval("true", expr.Env(map[string]interface{}{}))
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "misused")
+	is.Err(err)
+	is.Contains(err.Error(), "misused")
 }
 
 func TestExpr_fetch_from_func(t *testing.T) {
+	is := is.New(t)
 	_, err := expr.Eval("foo.Value", map[string]interface{}{
 		"foo": func() {},
 	})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cannot fetch Value from func()")
+	is.Err(err)
+	is.Contains(err.Error(), "cannot fetch Value from func()")
 }
 
 func TestExpr_map_default_values(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"foo": map[string]string{},
 		"bar": map[string]*string{},
@@ -1055,11 +1063,11 @@ func TestExpr_map_default_values(t *testing.T) {
 	input := `foo['missing'] == '' && bar['missing'] == nil`
 
 	program, err := expr.Compile(input, expr.Env(env))
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	output, err := expr.Run(program, env)
-	require.NoError(t, err)
-	require.Equal(t, true, output)
+	is.NotErr(err)
+	is.Equal(true, output)
 }
 
 func TestExpr_map_default_values_compile_check(t *testing.T) {
@@ -1077,19 +1085,21 @@ func TestExpr_map_default_values_compile_check(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		is := is.New(t)
 		_, err := expr.Compile(tt.input, expr.Env(tt.env), expr.AllowUndefinedVariables())
-		require.NoError(t, err)
+		is.NotErr(err)
 	}
 }
 
 func TestExpr_calls_with_nil(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"equals": func(a, b interface{}) interface{} {
-			assert.Nil(t, a, "a is not nil")
-			assert.Nil(t, b, "b is not nil")
+			is.Nil(a)
+			is.Nil(b)
 			return a == b
 		},
-		"is": is{},
+		"is": is,
 	}
 
 	p, err := expr.Compile(
@@ -1098,11 +1108,11 @@ func TestExpr_calls_with_nil(t *testing.T) {
 		expr.Operator("==", "equals"),
 		expr.AllowUndefinedVariables(),
 	)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	out, err := expr.Run(p, env)
-	require.NoError(t, err)
-	require.Equal(t, true, out)
+	is.NotErr(err)
+	is.Equal(true, out)
 }
 
 func TestExpr_call_floatarg_func_with_int(t *testing.T) {
@@ -1122,18 +1132,20 @@ func TestExpr_call_floatarg_func_with_int(t *testing.T) {
 		{"1/1", 1.0},
 		{"1*1", 1.0},
 	} {
+		is := is.New(t)
 		p, err := expr.Compile(
 			fmt.Sprintf("cnv(%s)", each.input),
 			expr.Env(env))
-		require.NoError(t, err)
+		is.NotErr(err)
 
 		out, err := expr.Run(p, env)
-		require.NoError(t, err)
-		require.Equal(t, each.expected, out)
+		is.NotErr(err)
+		is.Equal(each.expected, out)
 	}
 }
 
 func TestConstExpr_error_panic(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"divide": func(a, b int) int { return a / b },
 	}
@@ -1143,8 +1155,8 @@ func TestConstExpr_error_panic(t *testing.T) {
 		expr.Env(env),
 		expr.ConstExpr("divide"),
 	)
-	require.Error(t, err)
-	require.Equal(t, "compile error: integer divide by zero (1:5)\n | 1 + divide(1, 0)\n | ....^", err.Error())
+	is.Err(err)
+	is.Equal("compile error: integer divide by zero (1:5)\n | 1 + divide(1, 0)\n | ....^", err.Error())
 }
 
 type divideError struct{ Message string }
@@ -1154,6 +1166,7 @@ func (e divideError) Error() string {
 }
 
 func TestConstExpr_error_as_error(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"divide": func(a, b int) (int, error) {
 			if b == 0 {
@@ -1168,12 +1181,13 @@ func TestConstExpr_error_as_error(t *testing.T) {
 		expr.Env(env),
 		expr.ConstExpr("divide"),
 	)
-	require.Error(t, err)
-	require.Equal(t, "integer divide by zero", err.Error())
-	require.IsType(t, divideError{}, err)
+	is.Err(err)
+	is.Equal("integer divide by zero", err.Error())
+	is.EqualType(divideError{}, err)
 }
 
 func TestConstExpr_error_wrong_type(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"divide": 0,
 	}
@@ -1183,17 +1197,18 @@ func TestConstExpr_error_wrong_type(t *testing.T) {
 		expr.Env(env),
 		expr.ConstExpr("divide"),
 	)
-	require.Error(t, err)
-	require.Equal(t, "const expression \"divide\" must be a function", err.Error())
+	is.Err(err)
+	is.Equal("const expression \"divide\" must be a function", err.Error())
 }
 
 func TestConstExpr_error_no_env(t *testing.T) {
+	is := is.New(t)
 	_, err := expr.Compile(
 		`1 + divide(1, 0)`,
 		expr.ConstExpr("divide"),
 	)
-	require.Error(t, err)
-	require.Equal(t, "no environment for const expression: divide", err.Error())
+	is.Err(err)
+	is.Equal("no environment for const expression: divide", err.Error())
 }
 
 var stringer = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
@@ -1217,19 +1232,20 @@ func (p *stringerPatcher) Exit(node *ast.Node) {
 }
 
 func TestPatch(t *testing.T) {
+	is := is.New(t)
 	program, err := expr.Compile(
 		`Ticket == "$100" and "$90" != Ticket + "0"`,
 		expr.Env(mockEnv{}),
 		expr.Patch(&stringerPatcher{}),
 	)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := mockEnv{
 		Ticket: &ticket{Price: 100},
 	}
 	output, err := expr.Run(program, env)
-	require.NoError(t, err)
-	require.Equal(t, true, output)
+	is.NotErr(err)
+	is.Equal(true, output)
 }
 
 type lengthPatcher struct{}
@@ -1248,55 +1264,60 @@ func (p *lengthPatcher) Exit(node *ast.Node) {
 }
 
 func TestPatch_length(t *testing.T) {
+	is := is.New(t)
 	program, err := expr.Compile(
 		`String.length == 5`,
 		expr.Env(mockEnv{}),
 		expr.Patch(&lengthPatcher{}),
 	)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	env := mockEnv{String: "hello"}
 	output, err := expr.Run(program, env)
-	require.NoError(t, err)
-	require.Equal(t, true, output)
+	is.NotErr(err)
+	is.Equal(true, output)
 }
 
 func TestCompile_exposed_error(t *testing.T) {
+	is := is.New(t)
 	_, err := expr.Compile(`1 == true`)
-	require.Error(t, err)
+	is.Err(err)
 
 	fileError, ok := err.(*file.Error)
-	require.True(t, ok, "error should be of type *file.Error")
-	require.Equal(t, "invalid operation: == (mismatched types int and bool) (1:3)\n | 1 == true\n | ..^", fileError.Error())
-	require.Equal(t, 2, fileError.Column)
-	require.Equal(t, 1, fileError.Line)
+	is.Msg("error should be of type *file.Error").True(ok)
+	is.Equal("invalid operation: == (mismatched types int and bool) (1:3)\n | 1 == true\n | ..^", fileError.Error())
+	is.Equal(2, fileError.Column)
+	is.Equal(1, fileError.Line)
 
 	b, err := json.Marshal(err)
-	require.NoError(t, err)
-	require.Equal(t, `{"Line":1,"Column":2,"Message":"invalid operation: == (mismatched types int and bool)","Snippet":"\n | 1 == true\n | ..^"}`, string(b))
+	is.NotErr(err)
+	is.Equal(`{"Line":1,"Column":2,"Message":"invalid operation: == (mismatched types int and bool)","Snippet":"\n | 1 == true\n | ..^"}`, string(b))
 }
 
 func TestAsBool_exposed_error(t *testing.T) {
+	is := is.New(t)
 	_, err := expr.Compile(`42`, expr.AsBool())
-	require.Error(t, err)
+	is.Err(err)
 
 	_, ok := err.(*file.Error)
-	require.False(t, ok, "error must not be of type *file.Error")
-	require.Equal(t, "expected bool, but got int", err.Error())
+	is.Msg("error must not be of type *file.Error").False(ok)
+	is.Equal("expected bool, but got int", err.Error())
 }
 
 func TestEval_exposed_error(t *testing.T) {
+	is := is.New(t)
 	_, err := expr.Eval(`1/0`, nil)
-	require.Error(t, err)
+	is.Err(err)
 
 	fileError, ok := err.(*file.Error)
-	require.True(t, ok, "error should be of type *file.Error")
-	require.Equal(t, "runtime error: integer divide by zero (1:2)\n | 1/0\n | .^", fileError.Error())
-	require.Equal(t, 1, fileError.Column)
-	require.Equal(t, 1, fileError.Line)
+	is.Msg("error should be of type *file.Error").True(ok)
+	is.Equal("runtime error: integer divide by zero (1:2)\n | 1/0\n | .^", fileError.Error())
+	is.Equal(1, fileError.Column)
+	is.Equal(1, fileError.Line)
 }
 
 func TestIssue105(t *testing.T) {
+	is := is.New(t)
 	type A struct {
 		Field string
 	}
@@ -1319,36 +1340,39 @@ func TestIssue105(t *testing.T) {
 	`
 
 	_, err := expr.Compile(code, expr.Env(Env{}))
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	_, err = expr.Compile(`Field == ''`, expr.Env(Env{}))
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "ambiguous identifier Field")
+	is.Err(err)
+	is.Contains(err.Error(), "ambiguous identifier Field")
 }
 
 func TestIssue_nested_closures(t *testing.T) {
+	is := is.New(t)
 	code := `all(1..3, { all(1..3, { # > 0 }) and # > 0 })`
 
 	program, err := expr.Compile(code)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	output, err := expr.Run(program, nil)
-	require.NoError(t, err)
-	require.True(t, output.(bool))
+	is.NotErr(err)
+	is.True(output.(bool))
 }
 
 func TestIssue138(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{}
 
 	_, err := expr.Compile(`1 / (1 - 1)`, expr.Env(env))
-	require.Error(t, err)
-	require.Equal(t, "integer divide by zero (1:3)\n | 1 / (1 - 1)\n | ..^", err.Error())
+	is.Err(err)
+	is.Equal("integer divide by zero (1:3)\n | 1 / (1 - 1)\n | ..^", err.Error())
 
 	_, err = expr.Compile(`1 % 0`, expr.Env(env))
-	require.Error(t, err)
+	is.Err(err)
 }
 
 func TestIssue154(t *testing.T) {
+	is := is.New(t)
 	type Data struct {
 		Array  *[2]interface{}
 		Slice  *[]interface{}
@@ -1399,12 +1423,13 @@ func TestIssue154(t *testing.T) {
 	}
 
 	for _, input := range tests {
+		is := is.Msg(input)
 		program, err := expr.Compile(input, expr.Env(env))
-		assert.NoError(t, err, input)
+		is.NotErr(err)
 
 		output, err := expr.Run(program, env)
-		assert.NoError(t, err)
-		assert.True(t, output.(bool), input)
+		is.NotErr(err)
+		is.True(output.(bool))
 	}
 }
 
@@ -1549,11 +1574,11 @@ func (m mockMapStringStringEnv) Split(s, sep string) []string {
 
 type mockMapStringIntEnv map[string]int
 
-type is struct{}
+/*type is struct{}
 
 func (is) Nil(a interface{}) bool {
 	return a == nil
-}
+}*/
 
 type patcher struct{}
 

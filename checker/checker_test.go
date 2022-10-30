@@ -13,8 +13,7 @@ import (
 	"github.com/ilius/expr/conf"
 	"github.com/ilius/expr/parser"
 	"github.com/ilius/expr/test/mock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/ilius/is/v2"
 )
 
 var successTests = []string{
@@ -123,15 +122,16 @@ var successTests = []string{
 
 func TestCheck(t *testing.T) {
 	for _, input := range successTests {
+		is := is.New(t)
 		var err error
 		tree, err := parser.Parse(input)
-		require.NoError(t, err, input)
+		is.Msg(input).NotErr(err)
 
 		config := conf.New(mock.Env{})
 		expr.AsBool()(config)
 
 		_, err = checker.Check(tree, config)
-		assert.NoError(t, err, input)
+		is.Msg(input).NotErr(err)
 	}
 }
 
@@ -481,6 +481,7 @@ func TestCheck_error(t *testing.T) {
 	tests := strings.Split(strings.Trim(errorTests, "\n"), "\n\n")
 
 	for _, test := range tests {
+		is := is.New(t)
 		input := strings.SplitN(test, "\n", 2)
 		if len(input) != 2 {
 			t.Errorf("syntax error in test: %q", test)
@@ -488,7 +489,7 @@ func TestCheck_error(t *testing.T) {
 		}
 
 		tree, err := parser.Parse(input[0])
-		assert.NoError(t, err)
+		is.NotErr(err)
 
 		if input[0] == "1 + ''" {
 			fmt.Println(tree)
@@ -498,69 +499,74 @@ func TestCheck_error(t *testing.T) {
 		if err == nil {
 			err = fmt.Errorf("<nil>")
 		}
-
-		assert.Equal(t, input[1], err.Error(), input[0])
+		is.Msg(input[0]).Equal(input[1], err.Error())
 	}
 }
 
 func TestCheck_FloatVsInt(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`Int + Float`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	typ, err := checker.Check(tree, conf.New(mock.Env{}))
-	assert.NoError(t, err)
-	assert.Equal(t, typ.Kind(), reflect.Float64)
+	is.NotErr(err)
+	is.Equal(typ.Kind(), reflect.Float64)
 }
 
 func TestCheck_IntSums(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`Uint32 + Int32`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	typ, err := checker.Check(tree, conf.New(mock.Env{}))
-	assert.NoError(t, err)
-	assert.Equal(t, typ.Kind(), reflect.Int)
+	is.NotErr(err)
+	is.Equal(typ.Kind(), reflect.Int)
 }
 
 func TestVisitor_ConstantNode(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`re("[a-z]")`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	regexValue := regexp.MustCompile("[a-z]")
 	constNode := &ast.ConstantNode{Value: regexValue}
 	ast.Patch(&tree.Node, constNode)
 
 	_, err = checker.Check(tree, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, reflect.TypeOf(regexValue), tree.Node.Type())
+	is.NotErr(err)
+	is.Equal(reflect.TypeOf(regexValue), tree.Node.Type())
 }
 
 func TestCheck_AsBool(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`1+2`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := &conf.Config{}
 	expr.AsBool()(config)
 
 	_, err = checker.Check(tree, config)
-	assert.Error(t, err)
-	assert.Equal(t, "expected bool, but got int", err.Error())
+	is.Err(err)
+	is.Equal("expected bool, but got int", err.Error())
 }
 
 func TestCheck_AsInt64(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`true`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := &conf.Config{}
 	expr.AsInt64()(config)
 
 	_, err = checker.Check(tree, config)
-	assert.Error(t, err)
-	assert.Equal(t, "expected int64, but got bool", err.Error())
+	is.Err(err)
+	is.Equal("expected int64, but got bool", err.Error())
 }
 
 func TestCheck_TaggedFieldName(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`foo.bar`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := &conf.Config{}
 	expr.Env(struct {
@@ -571,10 +577,11 @@ func TestCheck_TaggedFieldName(t *testing.T) {
 	expr.AsBool()(config)
 
 	_, err = checker.Check(tree, config)
-	assert.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestCheck_Ambiguous(t *testing.T) {
+	is := is.New(t)
 	type A struct {
 		Ambiguous bool
 	}
@@ -587,64 +594,69 @@ func TestCheck_Ambiguous(t *testing.T) {
 	}
 
 	tree, err := parser.Parse(`Ambiguous == 1`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	_, err = checker.Check(tree, conf.New(Env{}))
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "ambiguous identifier Ambiguous")
+	is.Err(err)
+	is.Contains(err.Error(), "ambiguous identifier Ambiguous")
 }
 
 func TestCheck_NoConfig(t *testing.T) {
+	is := is.New(t)
 	tree, err := parser.Parse(`any`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	_, err = checker.Check(tree, nil)
-	assert.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestCheck_AllowUndefinedVariables(t *testing.T) {
+	is := is.New(t)
 	type Env struct {
 		A int
 	}
 
 	tree, err := parser.Parse(`any + fn()`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := conf.New(Env{})
 	expr.AllowUndefinedVariables()(config)
 
 	_, err = checker.Check(tree, config)
-	assert.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestCheck_AllowUndefinedVariables_DefaultType(t *testing.T) {
+	is := is.New(t)
 	env := map[string]bool{}
 
 	tree, err := parser.Parse(`any`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := conf.New(env)
 	expr.AllowUndefinedVariables()(config)
 	expr.AsBool()(config)
 
 	_, err = checker.Check(tree, config)
-	assert.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestCheck_AllowUndefinedVariables_OptionalChaining(t *testing.T) {
+	is := is.New(t)
 	type Env struct{}
 
 	tree, err := parser.Parse("Not?.A.B == nil")
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := conf.New(Env{})
 	expr.AllowUndefinedVariables()(config)
 
 	_, err = checker.Check(tree, config)
-	assert.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestCheck_OperatorOverload(t *testing.T) {
+	is := is.New(t)
 	type Date struct{}
 	env := map[string]interface{}{
 		"a": Date{},
@@ -654,24 +666,25 @@ func TestCheck_OperatorOverload(t *testing.T) {
 		},
 	}
 	tree, err := parser.Parse(`a + b`)
-	require.NoError(t, err)
+	is.NotErr(err)
 
 	config := conf.New(env)
 	expr.AsBool()(config)
 
 	_, err = checker.Check(tree, config)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid operation: + (mismatched types checker_test.Date and checker_test.Date)")
+	is.Err(err)
+	is.Contains(err.Error(), "invalid operation: + (mismatched types checker_test.Date and checker_test.Date)")
 
 	expr.Operator("+", "add")(config)
 	_, err = checker.Check(tree, config)
-	require.NoError(t, err)
+	is.NotErr(err)
 }
 
 func TestCheck_PointerNode(t *testing.T) {
+	is := is.New(t)
 	_, err := checker.Check(&parser.Tree{Node: &ast.PointerNode{}}, nil)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cannot use pointer accessor outside closure")
+	is.Err(err)
+	is.Contains(err.Error(), "cannot use pointer accessor outside closure")
 }
 
 func TestCheck_TypeWeights(t *testing.T) {
@@ -691,13 +704,14 @@ func TestCheck_TypeWeights(t *testing.T) {
 	}
 	for a := range types {
 		for b := range types {
+			is := is.New(t)
 			tree, err := parser.Parse(fmt.Sprintf("%s + %s", a, b))
-			require.NoError(t, err)
+			is.NotErr(err)
 
 			config := conf.New(types)
 
 			_, err = checker.Check(tree, config)
-			require.NoError(t, err)
+			is.NotErr(err)
 		}
 	}
 }

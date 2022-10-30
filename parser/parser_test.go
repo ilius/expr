@@ -7,7 +7,7 @@ import (
 
 	"github.com/ilius/expr/ast"
 	"github.com/ilius/expr/parser"
-	"github.com/stretchr/testify/assert"
+	"github.com/ilius/is/v2"
 )
 
 func TestParse(t *testing.T) {
@@ -286,6 +286,7 @@ func TestParse(t *testing.T) {
 		},
 	}
 	for _, test := range parseTests {
+		is := is.New(t)
 		actual, err := parser.Parse(test.input)
 		if err != nil {
 			t.Errorf("%s:\n%v", test.input, err)
@@ -295,7 +296,7 @@ func TestParse(t *testing.T) {
 			m.Regexp = nil
 			actual.Node = m
 		}
-		assert.Equal(t, ast.Dump(test.expected), ast.Dump(actual.Node), test.input)
+		is.Msg(test.input).Equal(ast.Dump(test.expected), ast.Dump(actual.Node))
 	}
 }
 
@@ -369,6 +370,7 @@ unexpected token Operator(",") (1:16)
 func TestParse_error(t *testing.T) {
 	tests := strings.Split(strings.Trim(errorTests, "\n"), "\n\n")
 	for _, test := range tests {
+		is := is.New(t)
 		input := strings.SplitN(test, "\n", 2)
 		if len(input) != 2 {
 			t.Errorf("syntax error in test: %q", test)
@@ -378,7 +380,7 @@ func TestParse_error(t *testing.T) {
 		if err == nil {
 			err = fmt.Errorf("<nil>")
 		}
-		assert.Equal(t, input[1], err.Error(), input[0])
+		is.Msg(input[0]).Equal(input[1], err.Error())
 	}
 }
 
@@ -467,6 +469,7 @@ func TestParse_optional_chaining(t *testing.T) {
 		},
 	}
 	for _, test := range parseTests {
+		is := is.New(t)
 		actual, err := parser.Parse(test.input)
 		if err != nil {
 			t.Errorf("%s:\n%v", test.input, err)
@@ -476,6 +479,6 @@ func TestParse_optional_chaining(t *testing.T) {
 			m.Regexp = nil
 			actual.Node = m
 		}
-		assert.Equal(t, ast.Dump(test.expected), ast.Dump(actual.Node), test.input)
+		is.Msg(test.input).Equal(ast.Dump(test.expected), ast.Dump(actual.Node))
 	}
 }

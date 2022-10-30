@@ -6,8 +6,7 @@ import (
 	"time"
 
 	. "github.com/ilius/expr/docgen"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/ilius/is/v2"
 )
 
 type Tweet struct {
@@ -43,6 +42,7 @@ func (*Env) Duration(s string) Duration {
 }
 
 func TestCreateDoc(t *testing.T) {
+	is := is.New(t)
 	Operators = nil
 	Builtins = nil
 	doc := CreateDoc(&Env{})
@@ -130,7 +130,7 @@ func TestCreateDoc(t *testing.T) {
 		PkgPath: "github.com/ilius/expr/docgen_test",
 	}
 
-	assert.EqualValues(t, expected, doc)
+	is.Equal(expected, doc) // EqualValues
 }
 
 type A struct {
@@ -152,6 +152,7 @@ type EnvAmbiguous struct {
 }
 
 func TestCreateDoc_Ambiguous(t *testing.T) {
+	is := is.New(t)
 	doc := CreateDoc(&EnvAmbiguous{})
 	expected := &Context{
 		Variables: map[Identifier]*Type{
@@ -197,10 +198,11 @@ func TestCreateDoc_Ambiguous(t *testing.T) {
 		PkgPath: "github.com/ilius/expr/docgen_test",
 	}
 
-	assert.EqualValues(t, expected, doc)
+	is.Equal(expected, doc) // EqualValues
 }
 
 func TestCreateDoc_FromMap(t *testing.T) {
+	is := is.New(t)
 	env := map[string]interface{}{
 		"Tweets": []*Tweet{},
 		"Config": struct {
@@ -246,11 +248,12 @@ func TestCreateDoc_FromMap(t *testing.T) {
 		},
 	}
 
-	require.EqualValues(t, expected, doc)
+	is.Equal(expected, doc) // EqualValues
 }
 
 func TestContext_Markdown(t *testing.T) {
+	is := is.New(t)
 	doc := CreateDoc(&Env{})
 	md := doc.Markdown()
-	require.True(t, len(md) > 0)
+	is.True(len(md) > 0)
 }

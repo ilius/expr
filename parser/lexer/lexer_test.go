@@ -5,11 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/ilius/expr/file"
 	. "github.com/ilius/expr/parser/lexer"
+	"github.com/ilius/is/v2"
 )
 
 type lexTest struct {
@@ -190,10 +188,11 @@ func TestLex(t *testing.T) {
 }
 
 func TestLex_location(t *testing.T) {
+	is := is.New(t)
 	source := file.NewSource("1..2 3..4")
 	tokens, err := Lex(source)
-	require.NoError(t, err)
-	require.Equal(t, []Token{
+	is.NotErr(err)
+	is.Equal([]Token{
 		{Location: file.Location{Line: 1, Column: 0}, Kind: Number, Value: "1"},
 		{Location: file.Location{Line: 1, Column: 1}, Kind: Operator, Value: ".."},
 		{Location: file.Location{Line: 1, Column: 3}, Kind: Number, Value: "2"},
@@ -224,6 +223,7 @@ func TestLex_error(t *testing.T) {
 	tests := strings.Split(strings.Trim(errorTests, "\n"), "\n\n")
 
 	for _, test := range tests {
+		is := is.New(t)
 		input := strings.SplitN(test, "\n", 2)
 		if len(input) != 2 {
 			t.Errorf("syntax error in test: %q", test)
@@ -234,7 +234,6 @@ func TestLex_error(t *testing.T) {
 		if err == nil {
 			err = fmt.Errorf("<nil>")
 		}
-
-		assert.Equal(t, input[1], err.Error(), input[0])
+		is.Msg(input[0]).Equal(input[1], err.Error())
 	}
 }
