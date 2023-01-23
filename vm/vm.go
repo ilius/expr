@@ -1,5 +1,7 @@
 package vm
 
+//go:generate sh -c "go run ./func_types > ./generated.go"
+
 import (
 	"fmt"
 	"reflect"
@@ -12,6 +14,7 @@ import (
 
 var (
 	MemoryBudget int = 1e6
+	errorType        = reflect.TypeOf((*error)(nil)).Elem()
 )
 
 func Run(program *Program, env interface{}) (interface{}, error) {
@@ -98,6 +101,18 @@ func (vm *VM) Run(program *Program, env interface{}) (out interface{}, err error
 			vm.push(b)
 			vm.push(a)
 
+		case OpLoadConst:
+			vm.push(runtime.Fetch(env, program.Constants[arg]))
+
+		case OpLoadField:
+			vm.push(runtime.FetchField(env, program.Constants[arg].(*runtime.Field)))
+
+		case OpLoadFast:
+			vm.push(env.(map[string]interface{})[program.Constants[arg].(string)])
+
+		case OpLoadMethod:
+			vm.push(runtime.FetchMethod(env, program.Constants[arg].(*runtime.Method)))
+
 		case OpFetch:
 			b := vm.pop()
 			a := vm.pop()
@@ -107,21 +122,9 @@ func (vm *VM) Run(program *Program, env interface{}) (out interface{}, err error
 			a := vm.pop()
 			vm.push(runtime.FetchField(a, program.Constants[arg].(*runtime.Field)))
 
-		case OpFetchEnv:
-			vm.push(runtime.Fetch(env, program.Constants[arg]))
-
-		case OpFetchEnvField:
-			vm.push(runtime.FetchField(env, program.Constants[arg].(*runtime.Field)))
-
-		case OpFetchEnvFast:
-			vm.push(env.(map[string]interface{})[program.Constants[arg].(string)])
-
 		case OpMethod:
 			a := vm.pop()
 			vm.push(runtime.FetchMethod(a, program.Constants[arg].(*runtime.Method)))
-
-		case OpMethodEnv:
-			vm.push(runtime.FetchMethod(env, program.Constants[arg].(*runtime.Method)))
 
 		case OpTrue:
 			vm.push(true)
@@ -300,7 +303,7 @@ func (vm *VM) Run(program *Program, env interface{}) (out interface{}, err error
 				}
 			}
 			out := fn.Call(in)
-			if len(out) == 2 && !runtime.IsNil(out[1]) {
+			if len(out) == 2 && out[1].Type() == errorType && !out[1].IsNil() {
 				panic(out[1].Interface().(error))
 			}
 			vm.push(out[0].Interface())
@@ -313,6 +316,11 @@ func (vm *VM) Run(program *Program, env interface{}) (out interface{}, err error
 				in[i] = vm.pop()
 			}
 			vm.push(fn(in...))
+
+		case OpCallTyped:
+			fn := vm.pop()
+			out := vm.call(fn, arg)
+			vm.push(out)
 
 		case OpArray:
 			size := vm.pop().(int)
@@ -347,8 +355,10 @@ func (vm *VM) Run(program *Program, env interface{}) (out interface{}, err error
 			t := arg
 			switch t {
 			case 0:
-				vm.push(runtime.ToInt64(vm.pop()))
+				vm.push(runtime.ToInt(vm.pop()))
 			case 1:
+				vm.push(runtime.ToInt64(vm.pop()))
+			case 2:
 				vm.push(runtime.ToFloat64(vm.pop()))
 			}
 

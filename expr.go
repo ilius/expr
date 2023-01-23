@@ -48,23 +48,12 @@ func Eval(input string, env interface{}) (interface{}, error) {
 // Methods defined on this type will be available as functions.
 func Env(env interface{}) Option {
 	return func(c *conf.Config) {
-		if _, ok := env.(map[string]interface{}); ok {
-			c.MapEnv = true
-		} else {
-			if reflect.ValueOf(env).Kind() == reflect.Map {
-				c.DefaultType = reflect.TypeOf(env).Elem()
-			}
-		}
-		c.Strict = true
-		c.Types = conf.CreateTypesTable(env)
-		c.Env = env
+		c.WithEnv(env)
 	}
 }
 
 // AllowUndefinedVariables allows to use undefined variables inside expressions.
 // This can be used with expr.Env option to partially define a few variables.
-// Note what this option is only works in map environment are used, otherwise
-// runtime.fetch will panic as there is no way to get missing field zero value.
 func AllowUndefinedVariables() Option {
 	return func(c *conf.Config) {
 		c.Strict = false
@@ -74,7 +63,7 @@ func AllowUndefinedVariables() Option {
 // Operator allows to replace a binary operator with a function.
 func Operator(operator string, fn ...string) Option {
 	return func(c *conf.Config) {
-		c.Operators[operator] = append(c.Operators[operator], fn...)
+		c.Operator(operator, fn...)
 	}
 }
 
@@ -86,21 +75,35 @@ func ConstExpr(fn string) Option {
 	}
 }
 
-// AsBool tells the compiler to expect boolean result.
+// AsKind tells the compiler to expect kind of the result.
+func AsKind(kind reflect.Kind) Option {
+	return func(c *conf.Config) {
+		c.Expect = kind
+	}
+}
+
+// AsBool tells the compiler to expect a boolean result.
 func AsBool() Option {
 	return func(c *conf.Config) {
 		c.Expect = reflect.Bool
 	}
 }
 
-// AsInt64 tells the compiler to expect int64 result.
+// AsInt tells the compiler to expect an int result.
+func AsInt() Option {
+	return func(c *conf.Config) {
+		c.Expect = reflect.Int
+	}
+}
+
+// AsInt64 tells the compiler to expect an int64 result.
 func AsInt64() Option {
 	return func(c *conf.Config) {
 		c.Expect = reflect.Int64
 	}
 }
 
-// AsFloat64 tells the compiler to expect float64 result.
+// AsFloat64 tells the compiler to expect a float64 result.
 func AsFloat64() Option {
 	return func(c *conf.Config) {
 		c.Expect = reflect.Float64
@@ -124,24 +127,21 @@ func Patch(visitor ast.Visitor) Option {
 // Compile parses and compiles given input expression to bytecode program.
 func Compile(input string, ops ...Option) (*vm.Program, error) {
 	config := &conf.Config{
-		Operators:    make(map[string][]string),
-		ConstExprFns: make(map[string]reflect.Value),
-		Optimize:     true,
+		Operators: make(map[string][]string),
+		ConstFns:  make(map[string]reflect.Value),
+		Optimize:  true,
 	}
 
 	for _, op := range ops {
 		op(config)
 	}
+	config.Check()
 
 	if len(config.Operators) > 0 {
 		config.Visitors = append(config.Visitors, &conf.OperatorPatcher{
 			Operators: config.Operators,
 			Types:     config.Types,
 		})
-	}
-
-	if err := config.Check(); err != nil {
-		return nil, err
 	}
 
 	tree, err := parser.Parse(input)

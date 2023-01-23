@@ -1,6 +1,6 @@
 package runtime
 
-//go:generate sh -c "go run ./generate > ./helpers.go"
+//go:generate sh -c "go run ./helpers > ./generated.go"
 
 import (
 	"fmt"
@@ -66,7 +66,7 @@ func Fetch(from, i interface{}) interface{} {
 
 type Field struct {
 	Index []int
-	Path  string
+	Path  []string
 }
 
 func FetchField(from interface{}, field *Field) interface{} {
@@ -77,31 +77,29 @@ func FetchField(from interface{}, field *Field) interface{} {
 			v = reflect.Indirect(v)
 			kind = v.Kind()
 		}
-		if kind == reflect.Struct {
-			// We can use v.FieldByIndex here, but it will panic if the field
-			// is not exists. And we need to recover() to generate a more
-			// user-friendly error message.
-			// Also, our fieldByIndex() function is slightly faster than the
-			// v.FieldByIndex() function as we don't need to verify what a field
-			// is a struct as we already did it on compilation step.
-			value := fieldByIndex(v, field.Index)
-			if value.IsValid() {
-				return value.Interface()
-			}
+		// We can use v.FieldByIndex here, but it will panic if the field
+		// is not exists. And we need to recover() to generate a more
+		// user-friendly error message.
+		// Also, our fieldByIndex() function is slightly faster than the
+		// v.FieldByIndex() function as we don't need to verify what a field
+		// is a struct as we already did it on compilation step.
+		value := fieldByIndex(v, field)
+		if value.IsValid() {
+			return value.Interface()
 		}
 	}
-	panic(fmt.Sprintf("cannot get %v from %T", field.Path, from))
+	panic(fmt.Sprintf("cannot get %v from %T", field.Path[0], from))
 }
 
-func fieldByIndex(v reflect.Value, index []int) reflect.Value {
-	if len(index) == 1 {
-		return v.Field(index[0])
+func fieldByIndex(v reflect.Value, field *Field) reflect.Value {
+	if len(field.Index) == 1 {
+		return v.Field(field.Index[0])
 	}
-	for i, x := range index {
+	for i, x := range field.Index {
 		if i > 0 {
 			if v.Kind() == reflect.Ptr {
 				if v.IsNil() {
-					return reflect.Value{}
+					panic(fmt.Sprintf("cannot get %v from %v", field.Path[i], field.Path[i-1]))
 				}
 				v = v.Elem()
 			}
@@ -204,7 +202,7 @@ func In(needle interface{}, array interface{}) bool {
 		for i := 0; i < v.Len(); i++ {
 			value := v.Index(i)
 			if value.IsValid() {
-				if Equal(value.Interface(), needle).(bool) {
+				if Equal(value.Interface(), needle) {
 					return true
 				}
 			}
@@ -260,7 +258,6 @@ func Negate(i interface{}) interface{} {
 		return -v
 	case float64:
 		return -v
-
 	case int:
 		return -v
 	case int8:
@@ -271,7 +268,6 @@ func Negate(i interface{}) interface{} {
 		return -v
 	case int64:
 		return -v
-
 	case uint:
 		return -v
 	case uint8:
@@ -282,7 +278,6 @@ func Negate(i interface{}) interface{} {
 		return -v
 	case uint64:
 		return -v
-
 	default:
 		panic(fmt.Sprintf("invalid operation: - %T", v))
 	}

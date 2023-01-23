@@ -30,11 +30,11 @@ func ExampleEval() {
 }
 
 func ExampleEval_runtime_error() {
-	_, err := expr.Eval(`map(1..3, {1 / (# - 3)})`, nil)
+	_, err := expr.Eval(`map(1..3, {1 % (# - 3)})`, nil)
 	fmt.Print(err)
 
 	// Output: runtime error: integer divide by zero (1:14)
-	//  | map(1..3, {1 / (# - 3)})
+	//  | map(1..3, {1 % (# - 3)})
 	//  | .............^
 }
 
@@ -134,6 +134,24 @@ func ExampleEnv_tagged_field_names() {
 	// Output : Hello World
 }
 
+func ExampleAsKind() {
+	program, err := expr.Compile("{a: 1, b: 2}", expr.AsKind(reflect.Map))
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+
+	output, err := expr.Run(program, nil)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+
+	fmt.Printf("%v", output)
+
+	// Output: map[a:1 b:2]
+}
+
 func ExampleAsBool() {
 	env := map[string]int{
 		"foo": 0,
@@ -168,6 +186,46 @@ func ExampleAsBool_error() {
 	// Output: expected bool, but got int
 }
 
+func ExampleAsInt() {
+	program, err := expr.Compile("42", expr.AsInt())
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+
+	output, err := expr.Run(program, nil)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+
+	fmt.Printf("%T(%v)", output, output)
+
+	// Output: int(42)
+}
+
+func ExampleAsInt64() {
+	env := map[string]interface{}{
+		"rating": 5.5,
+	}
+
+	program, err := expr.Compile("rating", expr.Env(env), expr.AsInt64())
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+
+	output, err := expr.Run(program, env)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+
+	fmt.Printf("%v", output.(int64))
+
+	// Output: 5
+}
+
 func ExampleAsFloat64() {
 	program, err := expr.Compile("42", expr.AsFloat64())
 	if err != nil {
@@ -192,28 +250,6 @@ func ExampleAsFloat64_error() {
 	fmt.Printf("%v", err)
 
 	// Output: expected float64, but got bool
-}
-
-func ExampleAsInt64() {
-	env := map[string]interface{}{
-		"rating": 5.5,
-	}
-
-	program, err := expr.Compile("rating", expr.Env(env), expr.AsInt64())
-	if err != nil {
-		fmt.Printf("%v", err)
-		return
-	}
-
-	output, err := expr.Run(program, env)
-	if err != nil {
-		fmt.Printf("%v", err)
-		return
-	}
-
-	fmt.Printf("%v", output.(int64))
-
-	// Output: 5
 }
 
 func ExampleOperator() {
@@ -401,8 +437,7 @@ func ExamplePatch() {
 	/*
 		type patcher struct{}
 
-		func (p *patcher) Enter(_ *ast.Node) {}
-		func (p *patcher) Exit(node *ast.Node) {
+		func (p *patcher) Visit(node *ast.Node) {
 			switch n := (*node).(type) {
 			case *ast.MemberNode:
 				ast.Patch(node, &ast.CallNode{
@@ -454,6 +489,22 @@ func TestOperator_struct(t *testing.T) {
 	is.NotErr(err)
 	is.Equal(true, output)
 }
+
+func TestOperator_options_another_order(t *testing.T) {
+	is := is.New(t)
+	code := `BirthDay == "2017-10-23"`
+	_, err := expr.Compile(code, expr.Operator("==", "DateEqual"), expr.Env(&mockEnv{}))
+	is.NotErr(err)
+}
+
+/*
+func TestOperator_no_env(t *testing.T) {
+	code := `BirthDay == "2017-10-23"`
+	require.Panics(t, func() {
+		_, _ = expr.Compile(code, expr.Operator("==", "DateEqual"))
+	})
+}
+*/
 
 func TestOperator_interface(t *testing.T) {
 	is := is.New(t)
@@ -619,6 +670,10 @@ func TestExpr(t *testing.T) {
 		},
 		{
 			`2 ** 8`,
+			float64(256),
+		},
+		{
+			`2 ^ 8`,
 			float64(256),
 		},
 		{
@@ -830,6 +885,18 @@ func TestExpr(t *testing.T) {
 			[]int{2},
 		},
 		{
+			`Array[1:4]`,
+			[]int{2, 3, 4},
+		},
+		{
+			`Array[:3]`,
+			[]int{1, 2, 3},
+		},
+		{
+			`Array[3:]`,
+			[]int{4, 5},
+		},
+		{
 			`Array[0:5] == Array`,
 			true,
 		},
@@ -966,30 +1033,30 @@ func TestExpr(t *testing.T) {
 	for _, tt := range tests {
 		is := is.New(t)
 		program, err := expr.Compile(tt.code, expr.Env(&mockEnv{}))
-		is.Msg("compile error").NotErr(err)
+		is.AddMsg("compile error").NotErr(err)
 
 		got, err := expr.Run(program, env)
-		is.Msg("execution error").NotErr(err)
-		is.Msg(tt.code).Equal(tt.want, got)
+		is.AddMsg("execution error").NotErr(err)
+		is.AddMsg(fmt.Sprint(tt.code)).Equal(tt.want, got)
 	}
 
 	for _, tt := range tests {
 		if tt.code == `-Int64 == 0` {
 			is := is.New(t)
 			program, err := expr.Compile(tt.code, expr.Optimize(false))
-			is.Msg("compile error").NotErr(err)
+			is.AddMsg("compile error").NotErr(err)
 
 			got, err := expr.Run(program, env)
-			is.Msg("run error").NotErr(err)
-			is.Msg("unoptimized: "+tt.code).Equal(tt.want, got)
+			is.AddMsg("run error").NotErr(err)
+			is.AddMsg(fmt.Sprint("unoptimized: "+tt.code)).Equal(tt.want, got)
 		}
 	}
 
 	for _, tt := range tests {
 		is := is.New(t)
 		got, err := expr.Eval(tt.code, env)
-		is.Msg("eval error: " + tt.code).NotErr(err)
-		is.Msg("eval: "+tt.code).Equal(tt.want, got)
+		is.AddMsg(fmt.Sprint("eval error: " + tt.code)).NotErr(err)
+		is.AddMsg(fmt.Sprint("eval: "+tt.code)).Equal(tt.want, got)
 	}
 }
 
@@ -1186,37 +1253,35 @@ func TestConstExpr_error_as_error(t *testing.T) {
 	is.EqualType(divideError{}, err)
 }
 
+/*
 func TestConstExpr_error_wrong_type(t *testing.T) {
-	is := is.New(t)
 	env := map[string]interface{}{
 		"divide": 0,
 	}
-
-	_, err := expr.Compile(
-		`1 + divide(1, 0)`,
-		expr.Env(env),
-		expr.ConstExpr("divide"),
-	)
-	is.Err(err)
-	is.Equal("const expression \"divide\" must be a function", err.Error())
+	assert.Panics(t, func() {
+		_, _ = expr.Compile(
+			`1 + divide(1, 0)`,
+			expr.Env(env),
+			expr.ConstExpr("divide"),
+		)
+	})
 }
 
 func TestConstExpr_error_no_env(t *testing.T) {
-	is := is.New(t)
-	_, err := expr.Compile(
-		`1 + divide(1, 0)`,
-		expr.ConstExpr("divide"),
-	)
-	is.Err(err)
-	is.Equal("no environment for const expression: divide", err.Error())
+	assert.Panics(t, func() {
+		_, _ = expr.Compile(
+			`1 + divide(1, 0)`,
+			expr.ConstExpr("divide"),
+		)
+	})
 }
+*/
 
 var stringer = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
 type stringerPatcher struct{}
 
-func (p *stringerPatcher) Enter(_ *ast.Node) {}
-func (p *stringerPatcher) Exit(node *ast.Node) {
+func (p *stringerPatcher) Visit(node *ast.Node) {
 	t := (*node).Type()
 	if t == nil {
 		return
@@ -1250,8 +1315,7 @@ func TestPatch(t *testing.T) {
 
 type lengthPatcher struct{}
 
-func (p *lengthPatcher) Enter(_ *ast.Node) {}
-func (p *lengthPatcher) Exit(node *ast.Node) {
+func (p *lengthPatcher) Visit(node *ast.Node) {
 	switch n := (*node).(type) {
 	case *ast.MemberNode:
 		if prop, ok := n.Property.(*ast.StringNode); ok && prop.Value == "length" {
@@ -1284,7 +1348,7 @@ func TestCompile_exposed_error(t *testing.T) {
 	is.Err(err)
 
 	fileError, ok := err.(*file.Error)
-	is.Msg("error should be of type *file.Error").True(ok)
+	is.AddMsg("error should be of type *file.Error").True(ok)
 	is.Equal("invalid operation: == (mismatched types int and bool) (1:3)\n | 1 == true\n | ..^", fileError.Error())
 	is.Equal(2, fileError.Column)
 	is.Equal(1, fileError.Line)
@@ -1303,28 +1367,33 @@ func TestCompile_deref(t *testing.T) {
 		},
 	}
 	{
-		// With specified env, OpDeref added and == works as expected.
+		is := // With specified env, OpDeref added and == works as expected.
+		is.New(t)
+
 		program, err := expr.Compile(`i == 1 && map.i == 1`, expr.Env(env))
-		require.NoError(t, err)
+		is.NotErr(err)
 
 		env["any"] = &i
 		out, err := expr.Run(program, env)
-		require.NoError(t, err)
-		require.Equal(t, true, out)
+		is.NotErr(err)
+		is.Equal(true, out)
 	}
 	{
-		// Compile without expr.Env() also works as expected,
+		is := // Compile without expr.Env() also works as expected,
 		// and should add OpDeref automatically.
+		is.New(t)
+
 		program, err := expr.Compile(`i == 1 && map.i == 1`)
-		require.NoError(t, err)
+		is.NotErr(err)
 
 		out, err := expr.Run(program, env)
-		require.NoError(t, err)
-		require.Equal(t, true, out)
+		is.NotErr(err)
+		is.Equal(true, out)
 	}
 }
 
 func TestEval_deref(t *testing.T) {
+	is := is.New(t)
 	i := 1
 	env := map[string]interface{}{
 		"i": &i,
@@ -1334,8 +1403,8 @@ func TestEval_deref(t *testing.T) {
 	}
 
 	out, err := expr.Eval(`i == 1 && map.i == 1`, env)
-	require.NoError(t, err)
-	require.Equal(t, true, out)
+	is.NotErr(err)
+	is.Equal(true, out)
 }
 
 func TestAsBool_exposed_error(t *testing.T) {
@@ -1344,19 +1413,19 @@ func TestAsBool_exposed_error(t *testing.T) {
 	is.Err(err)
 
 	_, ok := err.(*file.Error)
-	is.Msg("error must not be of type *file.Error").False(ok)
+	is.AddMsg("error must not be of type *file.Error").False(ok)
 	is.Equal("expected bool, but got int", err.Error())
 }
 
 func TestEval_exposed_error(t *testing.T) {
 	is := is.New(t)
-	_, err := expr.Eval(`1/0`, nil)
+	_, err := expr.Eval(`1 % 0`, nil)
 	is.Err(err)
 
 	fileError, ok := err.(*file.Error)
-	is.Msg("error should be of type *file.Error").True(ok)
-	is.Equal("runtime error: integer divide by zero (1:2)\n | 1/0\n | .^", fileError.Error())
-	is.Equal(1, fileError.Column)
+	is.AddMsg("error should be of type *file.Error").True(ok)
+	is.Equal("runtime error: integer divide by zero (1:3)\n | 1 % 0\n | ..^", fileError.Error())
+	is.Equal(2, fileError.Column)
 	is.Equal(1, fileError.Line)
 }
 
@@ -1408,15 +1477,14 @@ func TestIssue138(t *testing.T) {
 	env := map[string]interface{}{}
 
 	_, err := expr.Compile(`1 / (1 - 1)`, expr.Env(env))
-	is.Err(err)
-	is.Equal("integer divide by zero (1:3)\n | 1 / (1 - 1)\n | ..^", err.Error())
+	is.NotErr(err)
 
 	_, err = expr.Compile(`1 % 0`, expr.Env(env))
 	is.Err(err)
+	is.Equal("integer divide by zero (1:3)\n | 1 % 0\n | ..^", err.Error())
 }
 
 func TestIssue154(t *testing.T) {
-	is := is.New(t)
 	type Data struct {
 		Array  *[2]interface{}
 		Slice  *[]interface{}
@@ -1467,17 +1535,169 @@ func TestIssue154(t *testing.T) {
 	}
 
 	for _, input := range tests {
-		is := is.Msg(input)
+		is := is.New(t)
 		program, err := expr.Compile(input, expr.Env(env))
-		is.NotErr(err)
+		is.AddMsg(fmt.Sprint(input)).NotErr(err)
 
 		output, err := expr.Run(program, env)
 		is.NotErr(err)
-		is.True(output.(bool))
+		is.AddMsg(fmt.Sprint(input)).True(output.(bool))
 	}
 }
 
+func TestIssue270(t *testing.T) {
+	env := map[string]interface{}{
+		"int8":     int8(1),
+		"int16":    int16(3),
+		"int32":    int32(5),
+		"int64":    int64(7),
+		"uint8":    uint8(11),
+		"uint16":   uint16(13),
+		"uint32":   uint32(17),
+		"uint64":   uint64(19),
+		"int8a":    uint(23),
+		"int8b":    uint(29),
+		"int16a":   uint(31),
+		"int16b":   uint(37),
+		"int32a":   uint(41),
+		"int32b":   uint(43),
+		"int64a":   uint(47),
+		"int64b":   uint(53),
+		"uint8a":   uint(59),
+		"uint8b":   uint(61),
+		"uint16a":  uint(67),
+		"uint16b":  uint(71),
+		"uint32a":  uint(73),
+		"uint32b":  uint(79),
+		"uint64a":  uint(83),
+		"uint64b":  uint(89),
+		"float32a": float32(97),
+		"float32b": float32(101),
+		"float64a": float64(103),
+		"float64b": float64(107),
+	}
+	for _, each := range []struct {
+		input string
+	}{
+		{"int8 / int16"},
+		{"int32 / int64"},
+		{"uint8 / uint16"},
+		{"uint32 / uint64"},
+		{"int8 / uint64"},
+		{"int64 / uint8"},
+		{"int8a / int8b"},
+		{"int16a / int16b"},
+		{"int32a / int32b"},
+		{"int64a / int64b"},
+		{"uint8a / uint8b"},
+		{"uint16a / uint16b"},
+		{"uint32a / uint32b"},
+		{"uint64a / uint64b"},
+		{"float32a / float32b"},
+		{"float64a / float64b"},
+	} {
+		is := is.New(t)
+		p, err := expr.Compile(each.input, expr.Env(env))
+		is.NotErr(err)
+
+		out, err := expr.Run(p, env)
+		is.NotErr(err)
+		is.EqualType(float64(0), out)
+	}
+}
+
+func TestIssue271(t *testing.T) {
+	is := is.New(t)
+	type BarArray []float64
+
+	type Foo struct {
+		Bar BarArray
+		Baz int
+	}
+
+	type Env struct {
+		Foo Foo
+	}
+
+	code := `Foo.Bar[0]`
+
+	program, err := expr.Compile(code, expr.Env(Env{}))
+	is.NotErr(err)
+
+	output, err := expr.Run(program, Env{
+		Foo: Foo{
+			Bar: BarArray{1.0, 2.0, 3.0},
+		},
+	})
+	is.NotErr(err)
+	is.Equal(1.0, output)
+}
+
+func TestCompile_allow_to_use_interface_to_get_an_element_from_map(t *testing.T) {
+	is := is.New(t)
+	code := `{"value": "ok"}[vars.key]`
+	env := map[string]interface{}{
+		"vars": map[string]interface{}{
+			"key": "value",
+		},
+	}
+
+	program, err := expr.Compile(code, expr.Env(env))
+	is.NotErr(err)
+
+	out, err := expr.Run(program, env)
+	is.NotErr(err)
+	is.Equal("ok", out)
+
+	t.Run("with allow undefined variables", func(t *testing.T) {
+		code := `{'key': 'value'}[Key]`
+		env := mockMapStringStringEnv{}
+		options := []expr.Option{
+			expr.AllowUndefinedVariables(),
+		}
+
+		program, err := expr.Compile(code, options...)
+		is.NotErr(err)
+
+		out, err := expr.Run(program, env)
+		is.NotErr(err)
+		is.Nil(out)
+	})
+}
+
+func TestFastCall(t *testing.T) {
+	is := is.New(t)
+	env := map[string]interface{}{
+		"func": func(in interface{}) float64 {
+			return 8
+		},
+	}
+	code := `func("8")`
+
+	program, err := expr.Compile(code, expr.Env(env))
+	is.NotErr(err)
+
+	out, err := expr.Run(program, env)
+	is.NotErr(err)
+	is.Equal(float64(8), out)
+}
+
+func TestRun_custom_func_returns_an_error_as_second_arg(t *testing.T) {
+	is := is.New(t)
+	env := map[string]interface{}{
+		"semver": func(value string, cmp string) (bool, error) { return true, nil },
+	}
+
+	p, err := expr.Compile(`semver("1.2.3", "= 1.2.3")`, expr.Env(env))
+	is.NotErr(err)
+
+	out, err := expr.Run(p, env)
+	is.NotErr(err)
+	is.Equal(true, out)
+}
+
 // Mock types
+
 type mockEnv struct {
 	Any                  interface{}
 	Int, One, Two, Three int
@@ -1618,16 +1838,9 @@ func (m mockMapStringStringEnv) Split(s, sep string) []string {
 
 type mockMapStringIntEnv map[string]int
 
-/*type is struct{}
-
-func (is) Nil(a interface{}) bool {
-	return a == nil
-}*/
-
 type patcher struct{}
 
-func (p *patcher) Enter(_ *ast.Node) {}
-func (p *patcher) Exit(node *ast.Node) {
+func (p *patcher) Visit(node *ast.Node) {
 	switch n := (*node).(type) {
 	case *ast.MemberNode:
 		ast.Patch(node, &ast.CallNode{

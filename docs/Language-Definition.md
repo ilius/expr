@@ -1,44 +1,69 @@
 # Language Definition
 
-**Expr** is an expression evaluation language for Go.
+<table>
+  <tr>
+    <th colspan="2">Built-in Functions</th>
+    <th colspan="2">Operators</th>
+  </tr>
+  <tr>
+    <td>
+      <a href="#allarray-predicate">all()</a><br>
+      <a href="#anyarray-predicate">any()</a><br>
+      <a href="#lenarray-predicate">one()</a><br>
+      <a href="#nonearray-predicate">none()</a><br>
+    </td>
+    <td>
+      <a href="#lenv">len()</a><br>
+      <a href="#maparray-predicate">map()</a><br>
+      <a href="#filterarray-predicate">filter()</a><br>
+      <a href="#countarray-predicate">count()</a><br>    
+    </td>
+    <td>
+      <a href="#string-operators">matches</a><br>
+      <a href="#string-operators">contains</a><br>
+      <a href="#string-operators">startsWith</a><br>
+      <a href="#string-operators">endsWith</a><br>    
+    </td>
+    <td>
+      <a href="#membership-operators">in</a><br>
+      <a href="#membership-operators">not in</a><br>
+      <a href="#range-operator">x..y</a><br>
+      <a href="#slice-operator">[x:y]</a><br>
+    </td>
+  </tr>
+</table>
 
-## Supported Literals
+## Literals
 
-The package supports:
+* `true`
+* `false`
+* `nil`
 
-* **strings** - single and double quotes (e.g. `"hello"`, `'hello'`)
-* **numbers** - e.g. `103`, `2.5`, `.5`
-* **arrays** - e.g. `[1, 2, 3]`
-* **maps** - e.g. `{foo: "bar"}`
-* **booleans** - `true` and `false`
-* **nil** - `nil`
+### Strings
 
-## Digit separators
+Single or double quotes. Unicode sequences (`\uXXXX`) are supported.
 
-Integer literals may contain digit separators to allow digit grouping into more legible forms.
+### Numbers
 
-Example:
+Integers and floats.
 
-```
-10_000_000_000
-```
+* `42`
+* `3.14`
+* `1e6`
+* `0x2A`
+* `1_000_000`
 
-## Fields
+### Arrays
 
-Struct fields and map elements can be accessed by using the `.` or the `[]` syntax.
+* `[1, 2, 3]`
 
-```
-foo.Field
-bar["some-key"]
-```
+Tailing commas are allowed.
 
-## Functions
+### Maps
 
-Functions may be called using the `()` syntax.
+* `{foo: "bar"}`
 
-```
-foo.Method()
-```
+Tailing commas are allowed.
 
 ## Operators
 
@@ -49,12 +74,12 @@ foo.Method()
 * `*` (multiplication)
 * `/` (division)
 * `%` (modulus)
-* `**` (pow)
+* `^` or `**` (exponent)
 
 Example:
 
 ```
-x**2 + y
+x^2 + y^2
 ``` 
 
 ### Comparison Operators
@@ -94,8 +119,12 @@ Example:
 
 ### Membership Operators
 
+* `.` (dot)
 * `in` (contain)
 * `not in` (does not contain)
+
+Struct fields and map elements can be accessed by using the `.` or the `[]`
+syntax.
 
 Example:
 
@@ -104,10 +133,10 @@ user.Group in ["human_resources", "marketing"]
 ```
 
 ```
-"foo" in {foo: 1, bar: 2}
+data["tag-name"] in {foo: 1, bar: 2}
 ```
 
-### Numeric Operators
+### Range Operator
 
 * `..` (range)
 
@@ -123,58 +152,7 @@ The range is inclusive:
 1..3 == [1, 2, 3]
 ```
 
-### Ternary Operators
-
-* `foo ? 'yes' : 'no'`
-
-Example:
-
-```
-user.Age > 30 ? "mature" : "immature"
-```
-
-## Builtin functions
-
-* `len` (length of array, map or string)
-* `all` (will return `true` if all element satisfies the predicate)
-* `none` (will return `true` if all element does NOT satisfy the predicate)
-* `any` (will return `true` if any element satisfies the predicate)
-* `one` (will return `true` if exactly ONE element satisfies the predicate)
-* `filter` (filter array by the predicate)
-* `map` (map all items with the closure)
-* `count` (returns number of elements what satisfies the predicate)
-
-Examples:
-
-Ensure all tweets are less than 280 chars.
-
-```
-all(Tweets, {.Size < 280})
-```
-
-Ensure there is exactly one winner.
-
-```
-one(Participants, {.Winner})
-```
-
-## Closures
-
-The closure is an expression that accepts a single argument. To access 
-the argument use the `#` symbol.
-
-```
-map(0..9, {# / 2})
-```
-
-If the item of array is struct, it is possible to access fields of struct with 
-omitted `#` symbol (`#.Value` becomes `.Value`).
-
-```
-filter(Tweets, {len(.Value) > 280})
-```
-
-## Slices
+### Slice Operator
 
 * `array[:]` (slice)
 
@@ -185,8 +163,86 @@ Example:
 Variable `array` is `[1,2,3,4,5]`.
 
 ```
-array[1:5] == [2,3,4] 
+array[1:4] == [2,3,4]
+array[:3] == [1,2,3]
 array[3:] == [4,5]
-array[:4] == [1,2,3]
 array[:] == array
+```
+
+### Ternary Operator
+
+* `foo ? 'yes' : 'no'`
+
+Example:
+
+```
+user.Age > 30 ? "mature" : "immature"
+```
+
+## Built-in Functions
+
+### `all(array, predicate)`
+
+Returns **true** if all elements satisfies the [predicate](#predicate).
+If the array is empty, returns **true**.
+
+```
+all(Tweets, {.Size < 280})
+```
+
+### `any(array, predicate)`
+
+Returns **true** if any elements satisfies the [predicate](#predicate).
+If the array is empty, returns **false**.
+
+### `one(array, predicate)`
+
+Returns **true** if _exactly one_ element satisfies the [predicate](#predicate).
+If the array is empty, returns **false**.
+
+```
+one(Participants, {.Winner})
+```
+
+### `none(array, predicate)`
+
+Returns **true** if _all elements does not_ satisfy the [predicate](#predicate).
+If the array is empty, returns **true**.
+
+### `len(v)`
+
+Returns the length of an array, a map or a string.
+
+### `map(array, predicate)`
+
+Returns new array by applying the [predicate](#predicate) to each element of
+the array.
+
+### `filter(array, predicate)`
+
+Returns new array by filtering elements of the array by [predicate](#predicate).
+
+### `count(array, predicate)`
+
+Returns the number of elements what satisfies the [predicate](#predicate).
+Equivalent to:
+
+```
+len(filter(array, predicate))
+```
+
+## Predicate
+
+The predicate is an expression that accepts a single argument. To access
+the argument use the `#` symbol.
+
+```
+map(0..9, {# / 2})
+```
+
+If items of the array is a struct or a map, it is possible to access fields with
+omitted `#` symbol (`#.Value` becomes `.Value`).
+
+```
+filter(Tweets, {len(.Value) > 280})
 ```

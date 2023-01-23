@@ -2,7 +2,6 @@ package compiler_test
 
 import (
 	"math"
-	"reflect"
 	"testing"
 
 	"github.com/ilius/expr"
@@ -38,7 +37,7 @@ func TestCompile(t *testing.T) {
 		input   string
 		program vm.Program
 	}
-	var tests = []test{
+	tests := []test{
 		{
 			`65535`,
 			vm.Program{
@@ -158,11 +157,11 @@ func TestCompile(t *testing.T) {
 				Constants: []interface{}{
 					&runtime.Field{
 						Index: []int{0, 1, 2, 3},
-						Path:  "A.B.C.D",
+						Path:  []string{"A", "B", "C", "D"},
 					},
 				},
 				Bytecode: []vm.Opcode{
-					vm.OpFetchEnvField,
+					vm.OpLoadField,
 				},
 				Arguments: []int{0},
 			},
@@ -173,15 +172,15 @@ func TestCompile(t *testing.T) {
 				Constants: []interface{}{
 					&runtime.Field{
 						Index: []int{0},
-						Path:  "A",
+						Path:  []string{"A"},
 					},
 					&runtime.Field{
 						Index: []int{1, 2, 3},
-						Path:  "B.C.D",
+						Path:  []string{"B", "C", "D"},
 					},
 				},
 				Bytecode: []vm.Opcode{
-					vm.OpFetchEnvField,
+					vm.OpLoadField,
 					vm.OpJumpIfNil,
 					vm.OpFetchField,
 				},
@@ -194,15 +193,15 @@ func TestCompile(t *testing.T) {
 				Constants: []interface{}{
 					&runtime.Field{
 						Index: []int{0, 1},
-						Path:  "A.B",
+						Path:  []string{"A", "B"},
 					},
 					&runtime.Field{
 						Index: []int{2, 3},
-						Path:  "C.D",
+						Path:  []string{"C", "D"},
 					},
 				},
 				Bytecode: []vm.Opcode{
-					vm.OpFetchEnvField,
+					vm.OpLoadField,
 					vm.OpJumpIfNil,
 					vm.OpFetchField,
 				},
@@ -215,16 +214,16 @@ func TestCompile(t *testing.T) {
 				Constants: []interface{}{
 					&runtime.Field{
 						Index: []int{0, 2},
-						Path:  "A.Map",
+						Path:  []string{"A", "Map"},
 					},
 					"B",
 					&runtime.Field{
 						Index: []int{2, 3},
-						Path:  "C.D",
+						Path:  []string{"C", "D"},
 					},
 				},
 				Bytecode: []vm.Opcode{
-					vm.OpFetchEnvField,
+					vm.OpLoadField,
 					vm.OpPush,
 					vm.OpFetch,
 					vm.OpFetchField,
@@ -240,26 +239,4 @@ func TestCompile(t *testing.T) {
 		is.Msg(test.input).NotErr(err)
 		is.Msg(test.input).Equal(test.program.Disassemble(), program.Disassemble())
 	}
-}
-
-func TestCompile_cast(t *testing.T) {
-	is := is.New(t)
-	input := `1`
-	expected := &vm.Program{
-		Constants: []interface{}{
-			1,
-		},
-		Bytecode: []vm.Opcode{
-			vm.OpPush,
-			vm.OpCast,
-		},
-		Arguments: []int{0, 1},
-	}
-
-	tree, err := parser.Parse(input)
-	is.NotErr(err)
-
-	program, err := compiler.Compile(tree, &conf.Config{Expect: reflect.Float64})
-	is.NotErr(err)
-	is.Equal(expected.Disassemble(), program.Disassemble())
 }

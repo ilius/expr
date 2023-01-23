@@ -42,6 +42,7 @@ var successTests = []string{
 	"-1 + +1 == 0",
 	"1 / 2 == 0",
 	"2**3 + 1 != 0",
+	"2^3 + 1 != 0",
 	"Float == 1",
 	"Float < 1.0",
 	"Float <= 1.0",
@@ -58,6 +59,7 @@ var successTests = []string{
 	"String in MapOfFoo",
 	"String matches 'ok'",
 	"String matches Any",
+	"String not matches Any",
 	"String not in ArrayOfFoo",
 	"StringPtr == nil",
 	"[1, 2, 3] == []",
@@ -714,4 +716,46 @@ func TestCheck_TypeWeights(t *testing.T) {
 			is.NotErr(err)
 		}
 	}
+}
+
+func TestCheck_CallFastTyped(t *testing.T) {
+	env := map[string]interface{}{
+		"fn": func([]interface{}, string) string {
+			return "foo"
+		},
+	}
+
+	tree, err := parser.Parse("fn([1, 2], 'bar')")
+	require.NoError(t, err)
+
+	_, err = checker.Check(tree, conf.New(env))
+	require.NoError(t, err)
+
+	require.False(t, tree.Node.(*ast.CallNode).Fast)
+	require.Equal(t, 22, tree.Node.(*ast.CallNode).Typed)
+}
+
+func TestCheck_CallFastTyped_Method(t *testing.T) {
+	env := mock.Env{}
+
+	tree, err := parser.Parse("FuncTyped('bar')")
+	require.NoError(t, err)
+
+	_, err = checker.Check(tree, conf.New(env))
+	require.NoError(t, err)
+
+	require.False(t, tree.Node.(*ast.CallNode).Fast)
+	require.Equal(t, 42, tree.Node.(*ast.CallNode).Typed)
+}
+
+func TestCheck_works_with_nil_types(t *testing.T) {
+	env := map[string]interface{}{
+		"null": nil,
+	}
+
+	tree, err := parser.Parse("null")
+	require.NoError(t, err)
+
+	_, err = checker.Check(tree, conf.New(env))
+	require.NoError(t, err)
 }

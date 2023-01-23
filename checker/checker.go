@@ -3,11 +3,13 @@ package checker
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 
 	"github.com/ilius/expr/ast"
 	"github.com/ilius/expr/conf"
 	"github.com/ilius/expr/file"
 	"github.com/ilius/expr/parser"
+	"github.com/ilius/expr/vm"
 )
 
 func Check(tree *parser.Tree, config *conf.Config) (t reflect.Type, err error) {
@@ -29,7 +31,7 @@ func Check(tree *parser.Tree, config *conf.Config) (t reflect.Type, err error) {
 
 	if v.config.Expect != reflect.Invalid {
 		switch v.config.Expect {
-		case reflect.Int64, reflect.Float64:
+		case reflect.Int, reflect.Int64, reflect.Float64:
 			if !isNumber(t) {
 				return nil, fmt.Errorf("expected %v, but got %v", v.config.Expect, t)
 			}
@@ -77,8 +79,6 @@ func (v *visitor) visit(node ast.Node) (reflect.Type, info) {
 		t, i = v.UnaryNode(n)
 	case *ast.BinaryNode:
 		t, i = v.BinaryNode(n)
-	case *ast.MatchesNode:
-		t, i = v.MatchesNode(n)
 	case *ast.ChainNode:
 		t, i = v.ChainNode(n)
 	case *ast.MemberNode:
@@ -231,23 +231,6 @@ func (v *visitor) BinaryNode(node *ast.BinaryNode) (reflect.Type, info) {
 			return boolType, info{}
 		}
 
-	case "in", "not in":
-		if (isString(l) || isAny(l)) && isStruct(r) {
-			return boolType, info{}
-		}
-		if isMap(r) {
-			return boolType, info{}
-		}
-		if isArray(r) {
-			return boolType, info{}
-		}
-		if isAny(l) && anyOf(r, isString, isArray, isMap) {
-			return boolType, info{}
-		}
-		if isAny(l) && isAny(r) {
-			return boolType, info{}
-		}
-
 	case "<", ">", ">=", "<=":
 		if isNumber(l) && isNumber(r) {
 			return boolType, info{}
@@ -281,7 +264,7 @@ func (v *visitor) BinaryNode(node *ast.BinaryNode) (reflect.Type, info) {
 			return anyType, info{}
 		}
 
-	case "**":
+	case "**", "^":
 		if isNumber(l) && isNumber(r) {
 			return floatType, info{}
 		}
@@ -314,6 +297,38 @@ func (v *visitor) BinaryNode(node *ast.BinaryNode) (reflect.Type, info) {
 			return anyType, info{}
 		}
 
+	case "in":
+		if (isString(l) || isAny(l)) && isStruct(r) {
+			return boolType, info{}
+		}
+		if isMap(r) {
+			return boolType, info{}
+		}
+		if isArray(r) {
+			return boolType, info{}
+		}
+		if isAny(l) && anyOf(r, isString, isArray, isMap) {
+			return boolType, info{}
+		}
+		if isAny(l) && isAny(r) {
+			return boolType, info{}
+		}
+
+	case "matches":
+		if s, ok := node.Right.(*ast.StringNode); ok {
+			r, err := regexp.Compile(s.Value)
+			if err != nil {
+				return v.error(node, err.Error())
+			}
+			node.Regexp = r
+		}
+		if isString(l) && isString(r) {
+			return boolType, info{}
+		}
+		if or(l, r, isString) {
+			return boolType, info{}
+		}
+
 	case "contains", "startsWith", "endsWith":
 		if isString(l) && isString(r) {
 			return boolType, info{}
@@ -337,20 +352,6 @@ func (v *visitor) BinaryNode(node *ast.BinaryNode) (reflect.Type, info) {
 	}
 
 	return v.error(node, `invalid operation: %v (mismatched types %v and %v)`, node.Operator, l, r)
-}
-
-func (v *visitor) MatchesNode(node *ast.MatchesNode) (reflect.Type, info) {
-	l, _ := v.visit(node.Left)
-	r, _ := v.visit(node.Right)
-
-	if isString(l) && isString(r) {
-		return boolType, info{}
-	}
-	if or(l, r, isString) {
-		return boolType, info{}
-	}
-
-	return v.error(node, `invalid operation: matches (mismatched types %v and %v)`, l, r)
 }
 
 func (v *visitor) ChainNode(node *ast.ChainNode) (reflect.Type, info) {
@@ -392,7 +393,7 @@ func (v *visitor) MemberNode(node *ast.MemberNode) (reflect.Type, info) {
 		return anyType, info{}
 
 	case reflect.Map:
-		if !prop.AssignableTo(base.Key()) {
+		if !prop.AssignableTo(base.Key()) && !isAny(prop) {
 			return v.error(node.Property, "cannot use %v to get an element from %v", prop, base)
 		}
 		t, c := deref(base.Elem())
@@ -498,7 +499,7 @@ func (v *visitor) CallNode(node *ast.CallNode) (reflect.Type, info) {
 }
 
 // checkFunc checks func arguments and returns "return type" of func or method.
-func (v *visitor) checkFunc(fn reflect.Type, method bool, node ast.Node, name string, arguments []ast.Node) (reflect.Type, info) {
+func (v *visitor) checkFunc(fn reflect.Type, method bool, node *ast.CallNode, name string, arguments []ast.Node) (reflect.Type, info) {
 	if isAny(fn) {
 		return anyType, info{}
 	}
@@ -510,44 +511,41 @@ func (v *visitor) checkFunc(fn reflect.Type, method bool, node ast.Node, name st
 		return v.error(node, "func %v returns more then two values", name)
 	}
 
-	numIn := fn.NumIn()
-
 	// If func is method on an env, first argument should be a receiver,
-	// and actual arguments less than numIn by one.
+	// and actual arguments less than fnNumIn by one.
+	fnNumIn := fn.NumIn()
 	if method {
-		numIn--
+		fnNumIn--
+	}
+	// Skip first argument in case of the receiver.
+	fnInOffset := 0
+	if method {
+		fnInOffset = 1
 	}
 
 	if fn.IsVariadic() {
-		if len(arguments) < numIn-1 {
+		if len(arguments) < fnNumIn-1 {
 			return v.error(node, "not enough arguments to call %v", name)
 		}
 	} else {
-		if len(arguments) > numIn {
+		if len(arguments) > fnNumIn {
 			return v.error(node, "too many arguments to call %v", name)
 		}
-		if len(arguments) < numIn {
+		if len(arguments) < fnNumIn {
 			return v.error(node, "not enough arguments to call %v", name)
 		}
-	}
-
-	offset := 0
-
-	// Skip first argument in case of the receiver.
-	if method {
-		offset = 1
 	}
 
 	for i, arg := range arguments {
 		t, _ := v.visit(arg)
 
 		var in reflect.Type
-		if fn.IsVariadic() && i >= numIn-1 {
+		if fn.IsVariadic() && i >= fnNumIn-1 {
 			// For variadic arguments fn(xs ...int), go replaces type of xs (int) with ([]int).
 			// As we compare arguments one by one, we need underling type.
 			in = fn.In(fn.NumIn() - 1).Elem()
 		} else {
-			in = fn.In(i + offset)
+			in = fn.In(i + fnInOffset)
 		}
 
 		if isIntegerOrArithmeticOperation(arg) {
@@ -561,6 +559,36 @@ func (v *visitor) checkFunc(fn reflect.Type, method bool, node ast.Node, name st
 
 		if !t.AssignableTo(in) && t.Kind() != reflect.Interface {
 			return v.error(arg, "cannot use %v as argument (type %v) to call %v ", t, in, name)
+		}
+	}
+
+	if !fn.IsVariadic() {
+	funcTypes:
+		for i := range vm.FuncTypes {
+			if i == 0 {
+				continue
+			}
+			typed := reflect.ValueOf(vm.FuncTypes[i]).Elem().Type()
+			if typed.Kind() != reflect.Func {
+				continue
+			}
+			if typed.NumOut() != fn.NumOut() {
+				continue
+			}
+			for j := 0; j < typed.NumOut(); j++ {
+				if typed.Out(j) != fn.Out(j) {
+					continue funcTypes
+				}
+			}
+			if typed.NumIn() != fnNumIn {
+				continue
+			}
+			for j := 0; j < typed.NumIn(); j++ {
+				if typed.In(j) != fn.In(j+fnInOffset) {
+					continue funcTypes
+				}
+			}
+			node.Typed = i
 		}
 	}
 

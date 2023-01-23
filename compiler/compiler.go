@@ -37,13 +37,16 @@ func Compile(tree *parser.Tree, config *conf.Config) (program *Program, err erro
 	c.compile(tree.Node)
 
 	switch c.cast {
-	case reflect.Int64:
+	case reflect.Int:
 		c.emit(OpCast, 0)
-	case reflect.Float64:
+	case reflect.Int64:
 		c.emit(OpCast, 1)
+	case reflect.Float64:
+		c.emit(OpCast, 2)
 	}
 
 	program = &Program{
+		Node:      tree.Node,
 		Source:    tree.Source,
 		Locations: c.locations,
 		Constants: c.constants,
@@ -160,8 +163,6 @@ func (c *compiler) compile(node ast.Node) {
 		c.UnaryNode(n)
 	case *ast.BinaryNode:
 		c.BinaryNode(n)
-	case *ast.MatchesNode:
-		c.MatchesNode(n)
 	case *ast.ChainNode:
 		c.ChainNode(n)
 	case *ast.MemberNode:
@@ -195,19 +196,19 @@ func (c *compiler) NilNode(_ *ast.NilNode) {
 
 func (c *compiler) IdentifierNode(node *ast.IdentifierNode) {
 	if c.mapEnv {
-		c.emit(OpFetchEnvFast, c.addConstant(node.Value))
+		c.emit(OpLoadFast, c.addConstant(node.Value))
 	} else if len(node.FieldIndex) > 0 {
-		c.emit(OpFetchEnvField, c.addConstant(&runtime.Field{
+		c.emit(OpLoadField, c.addConstant(&runtime.Field{
 			Index: node.FieldIndex,
-			Path:  node.Value,
+			Path:  []string{node.Value},
 		}))
 	} else if node.Method {
-		c.emit(OpMethodEnv, c.addConstant(&runtime.Method{
+		c.emit(OpLoadMethod, c.addConstant(&runtime.Method{
 			Name:  node.Value,
 			Index: node.MethodIndex,
 		}))
 	} else {
-		c.emit(OpFetchEnv, c.addConstant(node.Value))
+		c.emit(OpLoadConst, c.addConstant(node.Value))
 	}
 	if node.Deref {
 		c.emit(OpDeref)
@@ -328,17 +329,6 @@ func (c *compiler) BinaryNode(node *ast.BinaryNode) {
 		c.compile(node.Right)
 		c.patchJump(end)
 
-	case "in":
-		c.compile(node.Left)
-		c.compile(node.Right)
-		c.emit(OpIn)
-
-	case "not in":
-		c.compile(node.Left)
-		c.compile(node.Right)
-		c.emit(OpIn)
-		c.emit(OpNot)
-
 	case "<":
 		c.compile(node.Left)
 		c.compile(node.Right)
@@ -384,10 +374,25 @@ func (c *compiler) BinaryNode(node *ast.BinaryNode) {
 		c.compile(node.Right)
 		c.emit(OpModulo)
 
-	case "**":
+	case "**", "^":
 		c.compile(node.Left)
 		c.compile(node.Right)
 		c.emit(OpExponent)
+
+	case "in":
+		c.compile(node.Left)
+		c.compile(node.Right)
+		c.emit(OpIn)
+
+	case "matches":
+		if node.Regexp != nil {
+			c.compile(node.Left)
+			c.emit(OpMatchesConst, c.addConstant(node.Regexp))
+		} else {
+			c.compile(node.Left)
+			c.compile(node.Right)
+			c.emit(OpMatches)
+		}
 
 	case "contains":
 		c.compile(node.Left)
@@ -415,17 +420,6 @@ func (c *compiler) BinaryNode(node *ast.BinaryNode) {
 	}
 }
 
-func (c *compiler) MatchesNode(node *ast.MatchesNode) {
-	if node.Regexp != nil {
-		c.compile(node.Left)
-		c.emit(OpMatchesConst, c.addConstant(node.Regexp))
-		return
-	}
-	c.compile(node.Left)
-	c.compile(node.Right)
-	c.emit(OpMatches)
-}
-
 func (c *compiler) ChainNode(node *ast.ChainNode) {
 	c.chains = append(c.chains, []int{})
 	c.compile(node.Node)
@@ -448,7 +442,7 @@ func (c *compiler) MemberNode(node *ast.MemberNode) {
 	op := OpFetch
 	original := node
 	index := node.FieldIndex
-	path := node.Name
+	path := []string{node.Name}
 	base := node.Node
 	if len(node.FieldIndex) > 0 {
 		op = OpFetchField
@@ -459,8 +453,8 @@ func (c *compiler) MemberNode(node *ast.MemberNode) {
 					panic("IdentifierNode should not be dereferenced")
 				}
 				index = append(ident.FieldIndex, index...)
-				path = ident.Value + "." + path
-				c.emitLocation(ident.Location(), OpFetchEnvField, c.addConstant(
+				path = append([]string{ident.Value}, path...)
+				c.emitLocation(ident.Location(), OpLoadField, c.addConstant(
 					&runtime.Field{Index: index, Path: path},
 				))
 				goto deref
@@ -471,7 +465,7 @@ func (c *compiler) MemberNode(node *ast.MemberNode) {
 					panic("MemberNode should not be dereferenced")
 				}
 				index = append(member.FieldIndex, index...)
-				path = member.Name + "." + path
+				path = append([]string{member.Name}, path...)
 				node = member
 				base = member.Node
 			} else {
@@ -522,12 +516,15 @@ func (c *compiler) CallNode(node *ast.CallNode) {
 	for _, arg := range node.Arguments {
 		c.compile(arg)
 	}
-	op := OpCall
-	if node.Fast {
-		op = OpCallFast
-	}
 	c.compile(node.Callee)
-	c.emit(op, len(node.Arguments))
+	if node.Typed > 0 {
+		c.emit(OpCallTyped, node.Typed)
+		return
+	} else if node.Fast {
+		c.emit(OpCallFast, len(node.Arguments))
+	} else {
+		c.emit(OpCall, len(node.Arguments))
+	}
 }
 
 func (c *compiler) BuiltinNode(node *ast.BuiltinNode) {

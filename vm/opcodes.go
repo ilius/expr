@@ -7,13 +7,13 @@ const (
 	OpPushInt
 	OpPop
 	OpRot
+	OpLoadConst
+	OpLoadField
+	OpLoadFast
+	OpLoadMethod
 	OpFetch
 	OpFetchField
-	OpFetchEnv
-	OpFetchEnvField
-	OpFetchEnvFast
 	OpMethod
-	OpMethodEnv
 	OpTrue
 	OpFalse
 	OpNil
@@ -48,6 +48,7 @@ const (
 	OpSlice
 	OpCall
 	OpCallFast
+	OpCallTyped
 	OpArray
 	OpMap
 	OpLen

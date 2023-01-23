@@ -3,12 +3,15 @@ package vm
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
+	"github.com/ilius/expr/ast"
 	"github.com/ilius/expr/file"
 	"github.com/ilius/expr/vm/runtime"
 )
 
 type Program struct {
+	Node      ast.Node
 	Source    *file.Source
 	Locations []file.Location
 	Constants []interface{}
@@ -48,7 +51,7 @@ func (program *Program) Disassemble() string {
 				c = r.String()
 			}
 			if field, ok := c.(*runtime.Field); ok {
-				c = fmt.Sprintf("{%v %v}", field.Path, field.Index)
+				c = fmt.Sprintf("{%v %v}", strings.Join(field.Path, "."), field.Index)
 			}
 			if method, ok := c.(*runtime.Method); ok {
 				c = fmt.Sprintf("{%v %v}", method.Name, method.Index)
@@ -69,26 +72,26 @@ func (program *Program) Disassemble() string {
 		case OpRot:
 			code("OpRot")
 
+		case OpLoadConst:
+			constant("OpLoadConst")
+
+		case OpLoadField:
+			constant("OpLoadField")
+
+		case OpLoadFast:
+			constant("OpLoadFast")
+
+		case OpLoadMethod:
+			constant("OpLoadMethod")
+
 		case OpFetch:
 			code("OpFetch")
 
 		case OpFetchField:
 			constant("OpFetchField")
 
-		case OpFetchEnv:
-			constant("OpFetchEnv")
-
-		case OpFetchEnvField:
-			constant("OpFetchEnvField")
-
-		case OpFetchEnvFast:
-			constant("OpFetchEnvFast")
-
 		case OpMethod:
 			constant("OpMethod")
-
-		case OpMethodEnv:
-			constant("OpMethodEnv")
 
 		case OpTrue:
 			code("OpTrue")
@@ -191,6 +194,9 @@ func (program *Program) Disassemble() string {
 
 		case OpCallFast:
 			argument("OpCallFast")
+
+		case OpCallTyped:
+			argument("OpCallTyped")
 
 		case OpArray:
 			code("OpArray")

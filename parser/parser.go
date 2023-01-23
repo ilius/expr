@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -31,8 +30,8 @@ type builtin struct {
 var unaryOperators = map[string]operator{
 	"not": {50, left},
 	"!":   {50, left},
-	"-":   {500, left},
-	"+":   {500, left},
+	"-":   {90, left},
+	"+":   {90, left},
 }
 
 var binaryOperators = map[string]operator{
@@ -46,7 +45,6 @@ var binaryOperators = map[string]operator{
 	">":          {20, left},
 	">=":         {20, left},
 	"<=":         {20, left},
-	"not in":     {20, left},
 	"in":         {20, left},
 	"matches":    {20, left},
 	"contains":   {20, left},
@@ -58,7 +56,8 @@ var binaryOperators = map[string]operator{
 	"*":          {60, left},
 	"/":          {60, left},
 	"%":          {60, left},
-	"**":         {70, right},
+	"**":         {100, right},
+	"^":          {100, right},
 }
 
 var builtins = map[string]builtin{
@@ -147,6 +146,16 @@ func (p *parser) parseExpression(precedence int) Node {
 
 	token := p.current
 	for token.Is(Operator) && p.err == nil {
+		negate := false
+		var notToken Token
+
+		if token.Is(Operator, "not") {
+			p.next()
+			notToken = p.current
+			negate = true
+			token = p.current
+		}
+
 		if op, ok := binaryOperators[token.Value]; ok {
 			if op.precedence >= precedence {
 				p.next()
@@ -158,30 +167,21 @@ func (p *parser) parseExpression(precedence int) Node {
 					nodeRight = p.parseExpression(op.precedence)
 				}
 
-				if token.Is(Operator, "matches") {
-					var r *regexp.Regexp
-					var err error
-
-					if s, ok := nodeRight.(*StringNode); ok {
-						r, err = regexp.Compile(s.Value)
-						if err != nil {
-							p.error("%v", err)
-						}
-					}
-					nodeLeft = &MatchesNode{
-						Regexp: r,
-						Left:   nodeLeft,
-						Right:  nodeRight,
-					}
-					nodeLeft.SetLocation(token.Location)
-				} else {
-					nodeLeft = &BinaryNode{
-						Operator: token.Value,
-						Left:     nodeLeft,
-						Right:    nodeRight,
-					}
-					nodeLeft.SetLocation(token.Location)
+				nodeLeft = &BinaryNode{
+					Operator: token.Value,
+					Left:     nodeLeft,
+					Right:    nodeRight,
 				}
+				nodeLeft.SetLocation(token.Location)
+
+				if negate {
+					nodeLeft = &UnaryNode{
+						Operator: "not",
+						Node:     nodeLeft,
+					}
+					nodeLeft.SetLocation(notToken.Location)
+				}
+
 				token = p.current
 				continue
 			}
@@ -289,20 +289,20 @@ func (p *parser) parsePrimaryExpression() Node {
 	case Number:
 		p.next()
 		value := strings.Replace(token.Value, "_", "", -1)
-		if strings.ContainsAny(value, ".eE") {
-			number, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				p.error("invalid float literal: %v", err)
-			}
-			node := &FloatNode{Value: number}
-			node.SetLocation(token.Location)
-			return node
-		} else if strings.Contains(value, "x") {
+		if strings.Contains(value, "x") {
 			number, err := strconv.ParseInt(value, 0, 64)
 			if err != nil {
 				p.error("invalid hex literal: %v", err)
 			}
 			node := &IntegerNode{Value: int(number)}
+			node.SetLocation(token.Location)
+			return node
+		} else if strings.ContainsAny(value, ".eE") {
+			number, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				p.error("invalid float literal: %v", err)
+			}
+			node := &FloatNode{Value: number}
 			node.SetLocation(token.Location)
 			return node
 		} else {
