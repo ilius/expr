@@ -38,7 +38,7 @@ Usually we want to compile, type check and verify what the expression returns a
 boolean (or another type). 
 
 For example, if a user saves an expression from a
-[web UI](https://antonmedv.github.io/expr/).
+[web UI](https://ilius.github.io/expr/).
 
 ```go
 package main

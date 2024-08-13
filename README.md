@@ -40,7 +40,7 @@ product.Stock < 15
   ```coffeescript
   all(Tweets, {.Size <= 280})
   ```
-* Fast ([benchmarks](https://github.com/antonmedv/golang-expression-evaluation-comparison#readme)): uses bytecode virtual machine and optimizing compiler.
+* Fast ([benchmarks](https://github.com/ilius/golang-expression-evaluation-comparison#readme)): uses bytecode virtual machine and optimizing compiler.
 
 ## Install
 
@@ -56,12 +56,12 @@ go get github.com/ilius/expr
 ## Expr Code Editor
 
 <a href="https://bit.ly/expr-code-editor">
-	<img src="https://antonmedv.github.io/expr/ogimage.png" align="center" alt="Expr Code Editor" width="1200">
+	<img src="https://ilius.github.io/expr/ogimage.png" align="center" alt="Expr Code Editor" width="1200">
 </a>
 
 Also, I have an embeddable code editor written in JavaScript which allows editing expressions with syntax highlighting and autocomplete based on your types declaration.
 
-[Learn more →](https://antonmedv.github.io/expr/)
+[Learn more →](https://ilius.github.io/expr/)
 
 ## Examples
 
