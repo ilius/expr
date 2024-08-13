@@ -5,9 +5,6 @@ import (
 	"testing"
 
 	"github.com/ilius/expr"
-	"github.com/ilius/expr/compiler"
-	"github.com/ilius/expr/conf"
-	"github.com/ilius/expr/parser"
 	"github.com/ilius/expr/vm"
 	"github.com/ilius/expr/vm/runtime"
 	"github.com/ilius/is/v2"

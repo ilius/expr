@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ilius/expr/ast"
 	. "github.com/ilius/expr/ast"
 	"github.com/ilius/expr/parser"
 	"github.com/ilius/is/v2"
