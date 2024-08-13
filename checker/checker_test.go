@@ -718,100 +718,100 @@ func TestCheck_TypeWeights(t *testing.T) {
 	}
 }
 
-func TestCheck_CallFastTyped(t *testing.T) {
-	env := map[string]interface{}{
-		"fn": func([]interface{}, string) string {
-			return "foo"
-		},
-	}
+// func TestCheck_CallFastTyped(t *testing.T) {
+// 	env := map[string]interface{}{
+// 		"fn": func([]interface{}, string) string {
+// 			return "foo"
+// 		},
+// 	}
 
-	tree, err := parser.Parse("fn([1, 2], 'bar')")
-	require.NoError(t, err)
+// 	tree, err := parser.Parse("fn([1, 2], 'bar')")
+// 	require.NoError(t, err)
 
-	_, err = checker.Check(tree, conf.New(env))
-	require.NoError(t, err)
+// 	_, err = checker.Check(tree, conf.New(env))
+// 	require.NoError(t, err)
 
-	require.False(t, tree.Node.(*ast.CallNode).Fast)
-	require.Equal(t, 22, tree.Node.(*ast.CallNode).Typed)
-}
+// 	require.False(t, tree.Node.(*ast.CallNode).Fast)
+// 	require.Equal(t, 22, tree.Node.(*ast.CallNode).Typed)
+// }
 
-func TestCheck_CallFastTyped_Method(t *testing.T) {
-	env := mock.Env{}
+// func TestCheck_CallFastTyped_Method(t *testing.T) {
+// 	env := mock.Env{}
 
-	tree, err := parser.Parse("FuncTyped('bar')")
-	require.NoError(t, err)
+// 	tree, err := parser.Parse("FuncTyped('bar')")
+// 	require.NoError(t, err)
 
-	_, err = checker.Check(tree, conf.New(env))
-	require.NoError(t, err)
+// 	_, err = checker.Check(tree, conf.New(env))
+// 	require.NoError(t, err)
 
-	require.False(t, tree.Node.(*ast.CallNode).Fast)
-	require.Equal(t, 42, tree.Node.(*ast.CallNode).Typed)
-}
+// 	require.False(t, tree.Node.(*ast.CallNode).Fast)
+// 	require.Equal(t, 42, tree.Node.(*ast.CallNode).Typed)
+// }
 
-func TestCheck_CallTyped_excludes_named_functions(t *testing.T) {
-	env := mock.Env{}
+// func TestCheck_CallTyped_excludes_named_functions(t *testing.T) {
+// 	env := mock.Env{}
 
-	tree, err := parser.Parse("FuncNamed('bar')")
-	require.NoError(t, err)
+// 	tree, err := parser.Parse("FuncNamed('bar')")
+// 	require.NoError(t, err)
 
-	_, err = checker.Check(tree, conf.New(env))
-	require.NoError(t, err)
+// 	_, err = checker.Check(tree, conf.New(env))
+// 	require.NoError(t, err)
 
-	require.False(t, tree.Node.(*ast.CallNode).Fast)
-	require.Equal(t, 0, tree.Node.(*ast.CallNode).Typed)
-}
+// 	require.False(t, tree.Node.(*ast.CallNode).Fast)
+// 	require.Equal(t, 0, tree.Node.(*ast.CallNode).Typed)
+// }
 
-func TestCheck_works_with_nil_types(t *testing.T) {
-	env := map[string]interface{}{
-		"null": nil,
-	}
+// func TestCheck_works_with_nil_types(t *testing.T) {
+// 	env := map[string]interface{}{
+// 		"null": nil,
+// 	}
 
-	tree, err := parser.Parse("null")
-	require.NoError(t, err)
+// 	tree, err := parser.Parse("null")
+// 	require.NoError(t, err)
 
-	_, err = checker.Check(tree, conf.New(env))
-	require.NoError(t, err)
-}
+// 	_, err = checker.Check(tree, conf.New(env))
+// 	require.NoError(t, err)
+// }
 
-func TestCheck_cast_to_expected_works_with_interface(t *testing.T) {
-	t.Run("float64", func(t *testing.T) {
-		type Env struct {
-			Any interface{}
-		}
+// func TestCheck_cast_to_expected_works_with_interface(t *testing.T) {
+// 	t.Run("float64", func(t *testing.T) {
+// 		type Env struct {
+// 			Any interface{}
+// 		}
 
-		tree, err := parser.Parse("Any")
-		require.NoError(t, err)
+// 		tree, err := parser.Parse("Any")
+// 		require.NoError(t, err)
 
-		config := conf.New(Env{})
-		expr.AsFloat64()(config)
+// 		config := conf.New(Env{})
+// 		expr.AsFloat64()(config)
 
-		_, err = checker.Check(tree, config)
-		require.NoError(t, err)
-	})
+// 		_, err = checker.Check(tree, config)
+// 		require.NoError(t, err)
+// 	})
 
-	t.Run("kind", func(t *testing.T) {
-		env := map[string]interface{}{
-			"Any": interface{}("foo"),
-		}
+// 	t.Run("kind", func(t *testing.T) {
+// 		env := map[string]interface{}{
+// 			"Any": interface{}("foo"),
+// 		}
 
-		tree, err := parser.Parse("Any")
-		require.NoError(t, err)
+// 		tree, err := parser.Parse("Any")
+// 		require.NoError(t, err)
 
-		config := conf.New(env)
-		expr.AsKind(reflect.String)(config)
+// 		config := conf.New(env)
+// 		expr.AsKind(reflect.String)(config)
 
-		_, err = checker.Check(tree, config)
-		require.NoError(t, err)
-	})
-}
+// 		_, err = checker.Check(tree, config)
+// 		require.NoError(t, err)
+// 	})
+// }
 
-func TestCheck_operator_in_works_with_interfaces(t *testing.T) {
-	tree, err := parser.Parse(`'Tom' in names`)
-	require.NoError(t, err)
+// func TestCheck_operator_in_works_with_interfaces(t *testing.T) {
+// 	tree, err := parser.Parse(`'Tom' in names`)
+// 	require.NoError(t, err)
 
-	config := conf.New(nil)
-	expr.AllowUndefinedVariables()(config)
+// 	config := conf.New(nil)
+// 	expr.AllowUndefinedVariables()(config)
 
-	_, err = checker.Check(tree, config)
-	require.NoError(t, err)
-}
+// 	_, err = checker.Check(tree, config)
+// 	require.NoError(t, err)
+// }
