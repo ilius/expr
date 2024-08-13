@@ -119,13 +119,15 @@ func TestRun_Helpers(t *testing.T) {
 					"b": b,
 				}
 
+				config := conf.CreateNew()
+
 				tree, err := parser.Parse(input)
 				is.NotErr(err)
 
-				_, err = checker.Check(tree, nil)
+				_, err = checker.Check(tree, config)
 				is.NotErr(err)
 
-				program, err := compiler.Compile(tree, nil)
+				program, err := compiler.Compile(tree, config)
 				is.NotErr(err)
 
 				_, err = vm.Run(program, env)
@@ -199,13 +201,15 @@ func TestRun_Helpers_Time(t *testing.T) {
 				"b": tt.b,
 			}
 
+			config := conf.CreateNew()
+
 			tree, err := parser.Parse(input)
 			is.NotErr(err)
 
-			_, err = checker.Check(tree, nil)
+			_, err = checker.Check(tree, config)
 			is.NotErr(err)
 
-			program, err := compiler.Compile(tree, nil)
+			program, err := compiler.Compile(tree, config)
 			is.NotErr(err)
 
 			got, err := vm.Run(program, env)

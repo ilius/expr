@@ -87,13 +87,12 @@ func TestCompile(t *testing.T) {
 					"string",
 				},
 				Bytecode: []vm.Opcode{
-					vm.OpPush,
-					vm.OpPush,
-					vm.OpEqualString,
+					vm.OpTrue,
 				},
 				Arguments: []int{0, 0, 0},
 			},
 		},
+		// fails:
 		{
 			`1000000 == 1000000`,
 			vm.Program{
@@ -108,14 +107,16 @@ func TestCompile(t *testing.T) {
 				Arguments: []int{0, 0, 0},
 			},
 		},
+		// fails:
 		{
 			`-1`,
 			vm.Program{
-				Constants: []interface{}{-1},
+				Constants: []interface{}{1},
 				Bytecode: []vm.Opcode{
 					vm.OpPush,
+					vm.OpNegate,
 				},
-				Arguments: []int{0},
+				Arguments: []int{0, 0},
 			},
 		},
 		{

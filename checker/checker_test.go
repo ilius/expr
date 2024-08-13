@@ -477,6 +477,11 @@ MapOfAny[0]
 cannot use int to get an element from map[string]interface {} (1:10)
  | MapOfAny[0]
  | .........^
+
+1 /* one */ + "2"
+invalid operation: + (mismatched types int and string) (1:13)
+ | 1 /* one */ + "2"
+ | ............^
 `
 
 func TestCheck_error(t *testing.T) {
@@ -492,10 +497,6 @@ func TestCheck_error(t *testing.T) {
 
 		tree, err := parser.Parse(input[0])
 		is.NotErr(err)
-
-		if input[0] == "1 + ''" {
-			fmt.Println(tree)
-		}
 
 		_, err = checker.Check(tree, conf.New(mock.Env{}))
 		if err == nil {
@@ -608,7 +609,7 @@ func TestCheck_NoConfig(t *testing.T) {
 	tree, err := parser.Parse(`any`)
 	is.NotErr(err)
 
-	_, err = checker.Check(tree, nil)
+	_, err = checker.Check(tree, conf.CreateNew())
 	is.NotErr(err)
 }
 
@@ -814,4 +815,75 @@ func TestCheck_TypeWeights(t *testing.T) {
 
 // 	_, err = checker.Check(tree, config)
 // 	require.NoError(t, err)
+// }
+
+// func TestCheck_Function_types_are_checked(t *testing.T) {
+// 	add := expr.Function(
+// 		"add",
+// 		func(p ...interface{}) (interface{}, error) {
+// 			out := 0
+// 			for _, each := range p {
+// 				out += each.(int)
+// 			}
+// 			return out, nil
+// 		},
+// 		new(func(int) int),
+// 		new(func(int, int) int),
+// 		new(func(int, int, int) int),
+// 		new(func(...int) int),
+// 	)
+
+// 	config := conf.CreateNew()
+// 	add(config)
+
+// 	tests := []string{
+// 		"add(1)",
+// 		"add(1, 2)",
+// 		"add(1, 2, 3)",
+// 		"add(1, 2, 3, 4)",
+// 	}
+// 	for _, test := range tests {
+// 		t.Run(test, func(t *testing.T) {
+// 			tree, err := parser.Parse(test)
+// 			require.NoError(t, err)
+
+// 			_, err = checker.Check(tree, config)
+// 			require.NoError(t, err)
+// 			require.NotNil(t, tree.Node.(*ast.CallNode).Func)
+// 			require.Equal(t, "add", tree.Node.(*ast.CallNode).Func.Name)
+// 		})
+// 	}
+
+// 	t.Run("errors", func(t *testing.T) {
+// 		tree, err := parser.Parse("add(1, '2')")
+// 		require.NoError(t, err)
+
+// 		_, err = checker.Check(tree, config)
+// 		require.Error(t, err)
+// 		require.Equal(t, "cannot use string as argument (type int) to call add  (1:8)\n | add(1, '2')\n | .......^", err.Error())
+// 	})
+// }
+
+// func TestCheck_Function_without_types(t *testing.T) {
+// 	add := expr.Function(
+// 		"add",
+// 		func(p ...interface{}) (interface{}, error) {
+// 			out := 0
+// 			for _, each := range p {
+// 				out += each.(int)
+// 			}
+// 			return out, nil
+// 		},
+// 	)
+
+// 	tree, err := parser.Parse("add(1, 2, 3)")
+// 	require.NoError(t, err)
+
+// 	config := conf.CreateNew()
+// 	add(config)
+
+// 	_, err = checker.Check(tree, config)
+// 	require.NoError(t, err)
+// 	require.NotNil(t, tree.Node.(*ast.CallNode).Func)
+// 	require.Equal(t, "add", tree.Node.(*ast.CallNode).Func.Name)
 // }

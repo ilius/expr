@@ -4,7 +4,7 @@ The [ast](https://pkg.go.dev/github.com/ilius/expr/ast?tab=doc) package
 provides `ast.Visitor` interface and `ast.Walk` function. You can use it for 
 customizing of the AST before compiling.
 
-For example, if you want to collect all variable names:
+For example, to collect all variable names:
 
 ```go
 package main
@@ -47,10 +47,10 @@ Specify a visitor to modify the AST with `expr.Patch` function.
 program, err := expr.Compile(code, expr.Patch(&visitor{}))
 ```
  
-For example, we are going to replace expressions `list[-1]` with 
-`list[len(list)-1]`.
+For example, we are going to replace the expression `list[-1]` with the `list[len(list)-1]`.
 
 ```go
+<<<<<<< HEAD
 package main
 
 import (
@@ -60,6 +60,8 @@ import (
 	"github.com/ilius/expr/ast"
 )
 
+=======
+>>>>>>> v1.11.1
 func main() {
 	env := map[string]interface{}{
 		"list": []int{1, 2, 3},
@@ -105,6 +107,7 @@ Type information is also available. Here is an example, there all `fmt.Stringer`
 interface automatically converted to `string` type.
 
 ```go
+<<<<<<< HEAD
 package main
 
 import (
@@ -115,6 +118,8 @@ import (
 	"github.com/ilius/expr/ast"
 )
 
+=======
+>>>>>>> v1.11.1
 func main() {
 	code := `Price == "$100"`
 
@@ -152,9 +157,11 @@ func (p *stringerPatcher) Visit(node *ast.Node) {
 		return
 	}
 	if t.Implements(stringer) {
-		ast.Patch(node, &ast.MethodNode{
-			Node:   *node,
-			Method: "String",
+		ast.Patch(node, &ast.CallNode{
+			Callee: &ast.MemberNode{
+				Node:  *node,
+				Field: "String",
+			},
 		})
 	}
 

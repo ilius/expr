@@ -348,9 +348,11 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"len(foo)",
-			&BuiltinNode{
-				Name:      "len",
-				Arguments: []Node{&IdentifierNode{Value: "foo"}},
+			&CallNode{
+				Callee: &IdentifierNode{Value: "len"},
+				Arguments: []Node{
+					&IdentifierNode{Value: "foo"},
+				},
 			},
 		},
 		{
@@ -437,6 +439,16 @@ func TestParse(t *testing.T) {
 				Operator: "not",
 				Node:     &IdentifierNode{Value: "in_var"},
 			},
+		},
+		{
+			"all(Tickets, #)",
+			&BuiltinNode{
+				Name: "all",
+				Arguments: []Node{
+					&IdentifierNode{Value: "Tickets"},
+					&ClosureNode{
+						Node: &PointerNode{},
+					}}},
 		},
 		{
 			"all(Tickets, {.Price > 0})",

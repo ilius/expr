@@ -881,11 +881,19 @@ func TestExpr(t *testing.T) {
 			3,
 		},
 		{
+			`Array[-1]`,
+			5,
+		},
+		{
 			`Array[1:2]`,
 			[]int{2},
 		},
 		{
 			`Array[1:4]`,
+			[]int{2, 3, 4},
+		},
+		{
+			`Array[-4:-1]`,
 			[]int{2, 3, 4},
 		},
 		{
@@ -1027,6 +1035,10 @@ func TestExpr(t *testing.T) {
 		{
 			`lowercase`,
 			"lowercase",
+		},
+		{
+			`1 /* one*/ + 2 /* two */`,
+			3,
 		},
 	}
 
@@ -1253,29 +1265,27 @@ func TestConstExpr_error_as_error(t *testing.T) {
 	is.EqualType(divideError{}, err)
 }
 
-/*
-func TestConstExpr_error_wrong_type(t *testing.T) {
-	env := map[string]interface{}{
-		"divide": 0,
-	}
-	assert.Panics(t, func() {
-		_, _ = expr.Compile(
-			`1 + divide(1, 0)`,
-			expr.Env(env),
-			expr.ConstExpr("divide"),
-		)
-	})
-}
+// func TestConstExpr_error_wrong_type(t *testing.T) {
+// 	env := map[string]interface{}{
+// 		"divide": 0,
+// 	}
+// 	assert.Panics(t, func() {
+// 		_, _ = expr.Compile(
+// 			`1 + divide(1, 0)`,
+// 			expr.Env(env),
+// 			expr.ConstExpr("divide"),
+// 		)
+// 	})
+// }
 
-func TestConstExpr_error_no_env(t *testing.T) {
-	assert.Panics(t, func() {
-		_, _ = expr.Compile(
-			`1 + divide(1, 0)`,
-			expr.ConstExpr("divide"),
-		)
-	})
-}
-*/
+// func TestConstExpr_error_no_env(t *testing.T) {
+// 	assert.Panics(t, func() {
+// 		_, _ = expr.Compile(
+// 			`1 + divide(1, 0)`,
+// 			expr.ConstExpr("divide"),
+// 		)
+// 	})
+// }
 
 var stringer = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
@@ -1319,8 +1329,8 @@ func (p *lengthPatcher) Visit(node *ast.Node) {
 	switch n := (*node).(type) {
 	case *ast.MemberNode:
 		if prop, ok := n.Property.(*ast.StringNode); ok && prop.Value == "length" {
-			ast.Patch(node, &ast.BuiltinNode{
-				Name:      "len",
+			ast.Patch(node, &ast.CallNode{
+				Callee:    &ast.IdentifierNode{Value: "len"},
 				Arguments: []ast.Node{n.Node},
 			})
 		}
@@ -1368,7 +1378,7 @@ func TestCompile_deref(t *testing.T) {
 	}
 	{
 		is := // With specified env, OpDeref added and == works as expected.
-		is.New(t)
+			is.New(t)
 
 		program, err := expr.Compile(`i == 1 && map.i == 1`, expr.Env(env))
 		is.NotErr(err)
@@ -1380,8 +1390,8 @@ func TestCompile_deref(t *testing.T) {
 	}
 	{
 		is := // Compile without expr.Env() also works as expected,
-		// and should add OpDeref automatically.
-		is.New(t)
+			// and should add OpDeref automatically.
+			is.New(t)
 
 		program, err := expr.Compile(`i == 1 && map.i == 1`)
 		is.NotErr(err)
@@ -1424,7 +1434,7 @@ func TestEval_exposed_error(t *testing.T) {
 
 	fileError, ok := err.(*file.Error)
 	is.AddMsg("error should be of type *file.Error").True(ok)
-	is.Equal("runtime error: integer divide by zero (1:3)\n | 1 % 0\n | ..^", fileError.Error())
+	is.Equal("integer divide by zero (1:3)\n | 1 % 0\n | ..^", fileError.Error())
 	is.Equal(2, fileError.Column)
 	is.Equal(1, fileError.Line)
 }
@@ -1682,6 +1692,22 @@ func TestFastCall(t *testing.T) {
 	is.Equal(float64(8), out)
 }
 
+// func TestFastCall_OpCallFastErr(t *testing.T) {
+// 	env := map[string]interface{}{
+// 		"func": func(...interface{}) (interface{}, error) {
+// 			return 8, nil
+// 		},
+// 	}
+// 	code := `func("8")`
+
+// 	program, err := expr.Compile(code, expr.Env(env))
+// 	assert.NoError(t, err)
+
+// 	out, err := expr.Run(program, env)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, 8, out)
+// }
+
 func TestRun_custom_func_returns_an_error_as_second_arg(t *testing.T) {
 	is := is.New(t)
 	env := map[string]interface{}{
@@ -1695,6 +1721,27 @@ func TestRun_custom_func_returns_an_error_as_second_arg(t *testing.T) {
 	is.NotErr(err)
 	is.Equal(true, out)
 }
+
+// func TestFunction(t *testing.T) {
+// 	add := expr.Function(
+// 		"add",
+// 		func(p ...interface{}) (interface{}, error) {
+// 			out := 0
+// 			for _, each := range p {
+// 				out += each.(int)
+// 			}
+// 			return out, nil
+// 		},
+// 		new(func(...int) int),
+// 	)
+
+// 	p, err := expr.Compile(`add() + add(1) + add(1, 2) + add(1, 2, 3) + add(1, 2, 3, 4)`, add)
+// 	assert.NoError(t, err)
+
+// 	out, err := expr.Run(p, nil)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, 20, out)
+// }
 
 // Mock types
 
