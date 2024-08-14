@@ -9,10 +9,10 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/builtin"
-	"github.com/expr-lang/expr/file"
-	"github.com/expr-lang/expr/vm/runtime"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/builtin"
+	"github.com/ilius/expr/file"
+	"github.com/ilius/expr/vm/runtime"
 )
 
 // Program represents a compiled expression.

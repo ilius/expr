@@ -6,15 +6,15 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/builtin"
-	"github.com/expr-lang/expr/checker"
-	. "github.com/expr-lang/expr/checker/nature"
-	"github.com/expr-lang/expr/conf"
-	"github.com/expr-lang/expr/file"
-	"github.com/expr-lang/expr/parser"
-	. "github.com/expr-lang/expr/vm"
-	"github.com/expr-lang/expr/vm/runtime"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/builtin"
+	"github.com/ilius/expr/checker"
+	. "github.com/ilius/expr/checker/nature"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/file"
+	"github.com/ilius/expr/parser"
+	. "github.com/ilius/expr/vm"
+	"github.com/ilius/expr/vm/runtime"
 )
 
 const (

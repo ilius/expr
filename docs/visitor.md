@@ -4,7 +4,7 @@ Expr provides an interface to traverse the AST of the expression before the comp
 The `Visitor` interface allows you to collect information about the expression, modify the expression, or even generate
 a new expression.
 
-Let's start with an [ast.Visitor](https://pkg.go.dev/github.com/expr-lang/expr/ast#Visitor) implementation which will 
+Let's start with an [ast.Visitor](https://pkg.go.dev/github.com/ilius/expr/ast#Visitor) implementation which will 
 collect all variables used in the expression:
 
 ```go
@@ -19,9 +19,9 @@ func (v *Visitor) Visit(node *ast.Node) {
 }
 ```
 
-Full list of available AST nodes can be found in the [ast](https://pkg.go.dev/github.com/expr-lang/expr/ast) documentation.
+Full list of available AST nodes can be found in the [ast](https://pkg.go.dev/github.com/ilius/expr/ast) documentation.
 
-Let's parse the expression and use [ast.Walk](https://pkg.go.dev/github.com/expr-lang/expr/ast#Walk) to traverse the AST:
+Let's parse the expression and use [ast.Walk](https://pkg.go.dev/github.com/ilius/expr/ast#Walk) to traverse the AST:
 
 ```go
 tree, err := parser.Parse(`foo + bar`)

@@ -5,11 +5,11 @@ package vm_test
 import (
 	"testing"
 
-	"github.com/expr-lang/expr/internal/testify/require"
+	"github.com/ilius/expr/internal/testify/require"
 
-	"github.com/expr-lang/expr/compiler"
-	"github.com/expr-lang/expr/parser"
-	"github.com/expr-lang/expr/vm"
+	"github.com/ilius/expr/compiler"
+	"github.com/ilius/expr/parser"
+	"github.com/ilius/expr/vm"
 )
 
 func TestDebugger(t *testing.T) {

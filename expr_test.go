@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/expr-lang/expr/internal/testify/assert"
-	"github.com/expr-lang/expr/internal/testify/require"
-	"github.com/expr-lang/expr/types"
+	"github.com/ilius/expr/internal/testify/assert"
+	"github.com/ilius/expr/internal/testify/require"
+	"github.com/ilius/expr/types"
 
-	"github.com/expr-lang/expr"
-	"github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/file"
-	"github.com/expr-lang/expr/test/mock"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/file"
+	"github.com/ilius/expr/test/mock"
 )
 
 func ExampleEval() {

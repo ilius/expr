@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/expr-lang/expr/checker/nature"
-	"github.com/expr-lang/expr/conf"
-	"github.com/expr-lang/expr/internal/deref"
+	"github.com/ilius/expr/checker/nature"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/internal/deref"
 )
 
 // Kind can be any of array, map, struct, func, string, int, float, bool or any.

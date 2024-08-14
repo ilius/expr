@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/expr-lang/expr/internal/deref"
+	"github.com/ilius/expr/internal/deref"
 )
 
 func Len(x any) any {

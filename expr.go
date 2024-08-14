@@ -6,15 +6,15 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/builtin"
-	"github.com/expr-lang/expr/checker"
-	"github.com/expr-lang/expr/compiler"
-	"github.com/expr-lang/expr/conf"
-	"github.com/expr-lang/expr/file"
-	"github.com/expr-lang/expr/optimizer"
-	"github.com/expr-lang/expr/patcher"
-	"github.com/expr-lang/expr/vm"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/builtin"
+	"github.com/ilius/expr/checker"
+	"github.com/ilius/expr/compiler"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/file"
+	"github.com/ilius/expr/optimizer"
+	"github.com/ilius/expr/patcher"
+	"github.com/ilius/expr/vm"
 )
 
 // Option for configuring config.

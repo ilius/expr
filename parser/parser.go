@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/builtin"
-	"github.com/expr-lang/expr/conf"
-	"github.com/expr-lang/expr/file"
-	. "github.com/expr-lang/expr/parser/lexer"
-	"github.com/expr-lang/expr/parser/operator"
-	"github.com/expr-lang/expr/parser/utils"
+	. "github.com/ilius/expr/ast"
+	"github.com/ilius/expr/builtin"
+	"github.com/ilius/expr/conf"
+	"github.com/ilius/expr/file"
+	. "github.com/ilius/expr/parser/lexer"
+	"github.com/ilius/expr/parser/operator"
+	"github.com/ilius/expr/parser/utils"
 )
 
 type arg byte

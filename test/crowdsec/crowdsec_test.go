@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/expr-lang/expr/internal/testify/require"
+	"github.com/ilius/expr/internal/testify/require"
 
-	"github.com/expr-lang/expr"
-	"github.com/expr-lang/expr/test/crowdsec"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/test/crowdsec"
 )
 
 func TestCrowdsec(t *testing.T) {

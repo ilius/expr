@@ -19,7 +19,7 @@ package spew_test
 import (
 	"fmt"
 
-	"github.com/expr-lang/expr/internal/spew"
+	"github.com/ilius/expr/internal/spew"
 )
 
 type Flag int

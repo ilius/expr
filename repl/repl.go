@@ -6,14 +6,14 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/expr-lang/expr/test/fuzz"
+	"github.com/ilius/expr/test/fuzz"
 
 	"github.com/bettercap/readline"
 
-	"github.com/expr-lang/expr"
-	"github.com/expr-lang/expr/builtin"
-	"github.com/expr-lang/expr/debug"
-	"github.com/expr-lang/expr/vm"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/builtin"
+	"github.com/ilius/expr/debug"
+	"github.com/ilius/expr/vm"
 )
 
 var keywords = []string{

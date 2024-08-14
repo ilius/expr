@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/expr-lang/expr/internal/testify/require"
+	"github.com/ilius/expr/internal/testify/require"
 
-	"github.com/expr-lang/expr"
+	"github.com/ilius/expr"
 )
 
 func TestPipes(t *testing.T) {

@@ -3,7 +3,7 @@ package fuzz
 import (
 	"fmt"
 
-	"github.com/expr-lang/expr"
+	"github.com/ilius/expr"
 )
 
 func NewEnv() map[string]any {

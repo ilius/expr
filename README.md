@@ -1,12 +1,12 @@
 <h1><a href="https://expr-lang.org"><img src="https://expr-lang.org/img/logo.png" alt="Zx logo" height="48"align="right"></a> Expr</h1>
 
 > [!IMPORTANT]
-> The repository [github.com/antonmedv/expr](https://github.com/antonmedv/expr) moved to [github.com/**expr-lang**/expr](https://github.com/expr-lang/expr).
+> The repository [github.com/antonmedv/expr](https://github.com/antonmedv/expr) moved to [github.com/**expr-lang**/expr](https://github.com/ilius/expr).
 
-[![test](https://github.com/expr-lang/expr/actions/workflows/test.yml/badge.svg)](https://github.com/expr-lang/expr/actions/workflows/test.yml) 
-[![Go Report Card](https://goreportcard.com/badge/github.com/expr-lang/expr)](https://goreportcard.com/report/github.com/expr-lang/expr) 
+[![test](https://github.com/ilius/expr/actions/workflows/test.yml/badge.svg)](https://github.com/ilius/expr/actions/workflows/test.yml) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/ilius/expr)](https://goreportcard.com/report/github.com/ilius/expr) 
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/expr.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:expr)
-[![GoDoc](https://godoc.org/github.com/expr-lang/expr?status.svg)](https://godoc.org/github.com/expr-lang/expr)
+[![GoDoc](https://godoc.org/github.com/ilius/expr?status.svg)](https://godoc.org/github.com/ilius/expr)
 
 **Expr** is a Go-centric expression language designed to deliver dynamic configurations with unparalleled accuracy, safety, and speed. 
 **Expr** combines simple [syntax](https://expr-lang.org/docs/language-definition) with powerful features for ease of use:
@@ -61,7 +61,7 @@ Here are its standout features:
 ## Install
 
 ```
-go get github.com/expr-lang/expr
+go get github.com/ilius/expr
 ```
 
 ## Documentation
@@ -78,7 +78,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/expr-lang/expr"
+	"github.com/ilius/expr"
 )
 
 func main() {
@@ -111,7 +111,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/expr-lang/expr"
+	"github.com/ilius/expr"
 )
 
 type Tweet struct {
@@ -167,10 +167,10 @@ func main() {
 * [Melrōse](https://melrōse.org) uses Expr to implement its music programming language.
 * [Tork](https://www.tork.run/) integrates Expr into its workflow execution.
 
-[Add your company too](https://github.com/expr-lang/expr/edit/master/README.md)
+[Add your company too](https://github.com/ilius/expr/edit/master/README.md)
 
 ## License
 
-[MIT](https://github.com/expr-lang/expr/blob/master/LICENSE)
+[MIT](https://github.com/ilius/expr/blob/master/LICENSE)
 
 <p align="center"><img src="https://expr-lang.org/img/gopher-small.png" width="150" /></p>

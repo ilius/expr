@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/internal/testify/assert"
-	"github.com/expr-lang/expr/internal/testify/require"
-	"github.com/expr-lang/expr/optimizer"
-	"github.com/expr-lang/expr/parser"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/internal/testify/assert"
+	"github.com/ilius/expr/internal/testify/require"
+	"github.com/ilius/expr/optimizer"
+	"github.com/ilius/expr/parser"
 )
 
 func TestOptimize_constant_folding(t *testing.T) {

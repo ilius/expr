@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/expr-lang/expr/vm"
+	"github.com/ilius/expr/vm"
 )
 
 func TestProgram_Disassemble(t *testing.T) {

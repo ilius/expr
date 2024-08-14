@@ -3,7 +3,7 @@ package nature
 import (
 	"reflect"
 
-	"github.com/expr-lang/expr/internal/deref"
+	"github.com/ilius/expr/internal/deref"
 )
 
 func fieldName(field reflect.StructField) string {

@@ -3,11 +3,11 @@ package patch_test
 import (
 	"testing"
 
-	"github.com/expr-lang/expr/internal/testify/require"
+	"github.com/ilius/expr/internal/testify/require"
 
-	"github.com/expr-lang/expr"
-	"github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/test/mock"
+	"github.com/ilius/expr"
+	"github.com/ilius/expr/ast"
+	"github.com/ilius/expr/test/mock"
 )
 
 type lengthPatcher struct{}

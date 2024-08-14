@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	. "github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/conf"
+	. "github.com/ilius/expr/ast"
+	"github.com/ilius/expr/conf"
 )
 
 func Optimize(node *Node, config *conf.Config) error {

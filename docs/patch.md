@@ -2,7 +2,7 @@
 
 Sometimes it may be necessary to modify an expression before the compilation.
 Expr provides a powerful mechanism to modify the expression using
-the [`Patch`](https://pkg.go.dev/github.com/expr-lang/expr#Patch) option.
+the [`Patch`](https://pkg.go.dev/github.com/ilius/expr#Patch) option.
 
 ## Simple example
 
@@ -76,7 +76,7 @@ func (DecimalPatcher) Visit(node *ast.Node) {
 }
 ```
 
-We used [Type()](https://pkg.go.dev/github.com/expr-lang/expr/ast#Node.Type) method to get the type of the expression node.
+We used [Type()](https://pkg.go.dev/github.com/ilius/expr/ast#Node.Type) method to get the type of the expression node.
 The `AssignableTo` method is used to check if the type is `Decimal`. If both sides are `Decimal`, we replace the expression with a function call.
 
 The important part of this patcher is to set correct types for the nodes. As we constructed a new `CallNode`, it lacks the type information.
@@ -114,7 +114,7 @@ fmt.Println(output) // Decimal{6}
 :::info
 Expr comes with already implemented patcher that simplifies operator overloading.
 
-The `DecimalPatcher` can be replaced with the [Operator](https://pkg.go.dev/github.com/expr-lang/expr#Operator) option.
+The `DecimalPatcher` can be replaced with the [Operator](https://pkg.go.dev/github.com/ilius/expr#Operator) option.
 
 ```go
 program, err := expr.Compile(code, expr.Env(env), expr.Operator("+", "add"))

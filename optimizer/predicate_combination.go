@@ -1,8 +1,8 @@
 package optimizer
 
 import (
-	. "github.com/expr-lang/expr/ast"
-	"github.com/expr-lang/expr/parser/operator"
+	. "github.com/ilius/expr/ast"
+	"github.com/ilius/expr/parser/operator"
 )
 
 /*
